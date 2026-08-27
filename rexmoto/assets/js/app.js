@@ -263,13 +263,8 @@ async function initHomePage() {
   const tests = await RX.fetchApprovedTestimonials().catch(() => []);
   renderTestimonials(tests);
 
-  // Hero image
-  const heroImg = document.querySelector("[data-hero-img]");
-  if (heroImg) {
-    const firstFeatured = featured[0] || moto[0] || all[0];
-    if (firstFeatured) heroImg.src = RX.getProductMainImage(firstFeatured);
-    else heroImg.src = "public/images/hero-moto.jpg";
-  }
+  // Hero image — ثابتة دائماً (الصورة الافتراضية public/images/hero-moto.jpg)
+  // لا تتغير بصور المنتجات
 }
 
 // ═════════════════════════════════════════════════════════════
