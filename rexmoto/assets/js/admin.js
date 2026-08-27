@@ -71,7 +71,9 @@ let currentUser = null;
 const MAX_IMG_W = 1200;
 const IMG_QUALITY = 0.82;
 
-function compressImage(file) {
+function compressImage(file, opts = {}) {
+  const maxW = opts.maxW || MAX_IMG_W;
+  const quality = (typeof opts.quality === "number") ? opts.quality : IMG_QUALITY;
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) return reject(new Error("not an image"));
     if (file.size > 10 * 1024 * 1024) return reject(new Error("حجم الصورة كبير جداً (أقصى 10MB)"));
@@ -80,12 +82,12 @@ function compressImage(file) {
       const img = new Image();
       img.onload = () => {
         let w = img.width, h = img.height;
-        if (w > MAX_IMG_W) { h = Math.round(h * MAX_IMG_W / w); w = MAX_IMG_W; }
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
         const canvas = document.createElement("canvas");
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL("image/jpeg", IMG_QUALITY);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error("fichier image invalide"));
@@ -304,6 +306,91 @@ let editingProduct = null;
 let pendingImages = [];
 let existingImages = [];
 
+// ═════════════════════════════════════════════════════════════
+// DYNAMIC ROWS: مميزات إضافية + ألوان مع صور
+// ═════════════════════════════════════════════════════════════
+let featRows = [];   // [{label, value}]
+let colorRows = [];  // [{name, image}]
+
+function escAttr(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+window.addFeatRow = function (label = "", value = "") {
+  if (featRows.length >= 12) { toast("الحد الأقصى 12 ميزة لكل منتج", "err"); return; }
+  featRows.push({ label: String(label).slice(0, 40), value: String(value).slice(0, 60) });
+  renderFeatRows();
+};
+window.moveFeatRow = function (i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= featRows.length) return;
+  [featRows[i], featRows[j]] = [featRows[j], featRows[i]];
+  renderFeatRows();
+};
+window.removeFeatRow = function (i) { featRows.splice(i, 1); renderFeatRows(); };
+function renderFeatRows() {
+  const box = document.getElementById("pmFeatRows");
+  if (!box) return;
+  if (!featRows.length) { box.innerHTML = `<div class="rows-empty">لا توجد مميزات بعد — اضغط "إضافة ميزة".</div>`; return; }
+  box.innerHTML = featRows.map((r, i) => `
+    <div class="feat-row">
+      <input class="fr-label" placeholder="اسم الميزة (مثال: نوع البطارية)" maxlength="40" value="${escAttr(r.label)}">
+      <input class="fr-value" placeholder="القيمة (مثال: 72V 20Ah)" maxlength="60" value="${escAttr(r.value)}">
+      <button type="button" class="iconbtn" title="تحريك لأعلى" onclick="moveFeatRow(${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button type="button" class="iconbtn" title="تحريك لأسفل" onclick="moveFeatRow(${i},1)" ${i === featRows.length - 1 ? "disabled" : ""}>↓</button>
+      <button type="button" class="iconbtn danger" title="حذف الميزة" onclick="removeFeatRow(${i})">✕</button>
+    </div>`).join("");
+  box.querySelectorAll(".feat-row").forEach((row, i) => {
+    row.querySelector(".fr-label").addEventListener("input", e => { featRows[i].label = e.target.value; });
+    row.querySelector(".fr-value").addEventListener("input", e => { featRows[i].value = e.target.value; });
+  });
+}
+
+window.addColorRow = function (name = "", image = null) {
+  if (colorRows.length >= 6) { toast("الحد الأقصى 6 ألوان لكل منتج", "err"); return; }
+  colorRows.push({ name: String(name).slice(0, 30), image: image || null });
+  renderColorRows();
+};
+window.removeColorRow = function (i) { colorRows.splice(i, 1); renderColorRows(); };
+window.removeColorImage = function (i) { colorRows[i].image = null; renderColorRows(); };
+window.onColorFile = async function (i, input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    toast("جارٍ تجهيز صورة اللون...", "info");
+    const dataUrl = await compressImage(file, { maxW: 900, quality: 0.8 });
+    colorRows[i].image = dataUrl;
+    renderColorRows();
+    toast("تمت إضافة صورة اللون");
+  } catch (e) { toast(e.message || "تعذّرت إضافة الصورة", "err"); }
+  input.value = "";
+};
+function renderColorRows() {
+  const box = document.getElementById("pmColorRows");
+  if (!box) return;
+  if (!colorRows.length) { box.innerHTML = `<div class="rows-empty">لا توجد ألوان بعد — اضغط "إضافة لون".</div>`; return; }
+  box.innerHTML = colorRows.map((c, i) => `
+    <div class="color-row">
+      <input class="cr-name" placeholder="اسم اللون (مثال: أحمر)" maxlength="30" value="${escAttr(c.name)}">
+      <div class="cr-img">
+        ${c.image
+          ? `<img src="${c.image}" alt="">
+             <div class="cr-img-actions">
+               <button type="button" class="cr-btn" onclick="document.getElementById('cf_${i}').click()">تغيير الصورة</button>
+               <button type="button" class="cr-btn danger" onclick="removeColorImage(${i})">إزالة</button>
+             </div>`
+          : `<button type="button" class="cr-add" onclick="document.getElementById('cf_${i}').click()">📷 صورة اللون</button>`}
+        <input type="file" id="cf_${i}" accept="image/*" hidden onchange="onColorFile(${i}, this)">
+      </div>
+      <button type="button" class="iconbtn danger" title="حذف اللون" onclick="removeColorRow(${i})">✕</button>
+    </div>`).join("");
+  box.querySelectorAll(".color-row").forEach((row, i) => {
+    row.querySelector(".cr-name").addEventListener("input", e => { colorRows[i].name = e.target.value; });
+  });
+}
+
 window.openProductModal = function () {
   editingProduct = null; pendingImages = []; existingImages = [];
   document.getElementById("pmTitle").textContent = "منتج جديد";
@@ -312,6 +399,8 @@ window.openProductModal = function () {
   document.getElementById("pmStatus").value = "active";
   document.getElementById("pmFeatured").value = "false";
   document.getElementById("pmStock").value = 1;
+  featRows = []; colorRows = [];
+  addFeatRow(); addColorRow();
   renderImageList();
   openModal("mProduct");
 };
@@ -338,7 +427,21 @@ window.editProduct = function (id) {
   document.getElementById("pmRange").value = p.rangeKm || "";
   document.getElementById("pmMotor").value = p.motorPower || "";
   document.getElementById("pmBattery").value = p.battery || "";
-  document.getElementById("pmColors").value = (p.colors || []).join("، ");
+  featRows = (Array.isArray(p.features) ? p.features : [])
+    .filter(f => f && f.label && f.value)
+    .slice(0, 12)
+    .map(f => ({ label: String(f.label).slice(0, 40), value: String(f.value).slice(0, 60) }));
+  if (!featRows.length) featRows.push({ label: "", value: "" });
+  colorRows = (Array.isArray(p.colors) ? p.colors : [])
+    .map(x => (typeof x === "string"
+      ? { name: x.trim(), image: null }
+      : { name: String((x && x.name) || "").trim(), image: (x && x.image) || null }))
+    .filter(x => x.name)
+    .slice(0, 6)
+    .map(x => ({ name: x.name.slice(0, 30), image: x.image }));
+  if (!colorRows.length) colorRows.push({ name: "", image: null });
+  renderFeatRows();
+  renderColorRows();
   document.getElementById("pmWarranty").value = p.warranty || "";
   document.getElementById("pmDesc").value = p.description || "";
   document.getElementById("pmFeatured").value = p.isFeatured ? "true" : "false";
@@ -417,9 +520,16 @@ document.getElementById("productForm").addEventListener("submit", async e => {
   const btn = document.getElementById("pmSave");
   btn.disabled = true; btn.textContent = "جارٍ الحفظ...";
   try {
-    const colorsStr = document.getElementById("pmColors").value.trim();
     const finalImages = [...existingImages, ...pendingImages.map(pi => ({ url: pi.dataUrl, isMain: false }))];
     if (finalImages.length) { finalImages[0].isMain = true; finalImages.forEach((img, i) => { if (i !== 0) img.isMain = false; }); }
+    const featuresData = featRows
+      .map(r => ({ label: (r.label || "").trim().slice(0, 40), value: (r.value || "").trim().slice(0, 60) }))
+      .filter(r => r.label && r.value)
+      .slice(0, 12);
+    const colorsData = colorRows
+      .map(r => ({ name: (r.name || "").trim().slice(0, 30), image: r.image || null }))
+      .filter(r => r.name)
+      .slice(0, 6);
 
     const data = {
       name: document.getElementById("pmName").value.trim(),
@@ -434,7 +544,8 @@ document.getElementById("productForm").addEventListener("submit", async e => {
       rangeKm: document.getElementById("pmRange").value ? Number(document.getElementById("pmRange").value) : null,
       motorPower: document.getElementById("pmMotor").value ? Number(document.getElementById("pmMotor").value) : null,
       battery: document.getElementById("pmBattery").value.trim() || null,
-      colors: colorsStr ? colorsStr.split(/[،,]/).map(s => s.trim()).filter(Boolean) : [],
+      colors: colorsData,
+      features: featuresData,
       warranty: document.getElementById("pmWarranty").value.trim() || null,
       description: document.getElementById("pmDesc").value.trim() || null,
       isFeatured: document.getElementById("pmFeatured").value === "true",

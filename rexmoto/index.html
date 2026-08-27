@@ -250,6 +250,8 @@
           <h3 id="mName"></h3>
           <div class="mf-price" id="mPrice"></div>
           <div class="mf-specs" id="mSpecs"></div>
+          <label class="o-color-label" id="mColorLabel" style="display:none">اللون</label>
+          <div class="o-colors" id="mColorSwatches" style="display:none"></div>
           <div class="mf-divider"></div>
           <button class="btn btn-primary" id="goOrderBtn">اطلب هذا المنتج</button>
           <div class="note">اضغط "اطلب" لملء بياناتك وسيتواصل معك صاحب المحل.</div>
@@ -263,7 +265,9 @@
           <label>المدينة</label><input type="text" id="oCity" placeholder="مدينتك" autocomplete="address-level2">
           <label>الكمية</label>
           <div class="qty-row"><div class="qty-ctrl"><button type="button" id="qtyMinus">−</button><input type="number" id="oQty" value="1" min="1" max="20"><button type="button" id="qtyPlus">+</button></div></div>
-          <label id="oColorLabel">اللون</label><select id="oColor"></select>
+          <label id="oColorLabel" style="display:none">اللون</label>
+          <div class="o-colors" id="oColorSwatches" style="display:none"></div>
+          <input type="hidden" id="oColorValue">
           <label>ملاحظات</label><textarea id="oNotes" placeholder="أي تفاصيل إضافية..." maxlength="500"></textarea>
           <button class="btn btn-primary" id="submitOrderBtn">تأكيد الطلب</button>
           <button class="btn btn-ghost" id="backToDetail">رجوع</button>

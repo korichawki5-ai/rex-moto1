@@ -126,9 +126,11 @@
         <div class="mstep" id="detailStep">
           <span class="mf-brand" id="mBrand"></span>
           <h3 id="mName"></h3>
-          <div class="mf-price" id="mPrice"></div>
-          <div class="mf-specs" id="mSpecs"></div>
-          <div class="mf-divider"></div>
+        <div class="mf-price" id="mPrice"></div>
+        <div class="mf-specs" id="mSpecs"></div>
+        <label class="o-color-label" id="mColorLabel" style="display:none">اللون</label>
+        <div class="o-colors" id="mColorSwatches" style="display:none"></div>
+        <div class="mf-divider"></div>
           <button class="btn btn-primary" id="goOrderBtn">اطلب هذا المنتج</button>
         </div>
         <div class="mstep" id="formStep" style="display:none">
@@ -140,7 +142,9 @@
           <label>المدينة</label><input type="text" id="oCity" autocomplete="address-level2">
           <label>الكمية</label>
           <div class="qty-row"><div class="qty-ctrl"><button type="button" id="qtyMinus">−</button><input type="number" id="oQty" value="1" min="1" max="20"><button type="button" id="qtyPlus">+</button></div></div>
-          <label>اللون</label><select id="oColor"></select>
+          <label id="oColorLabel" style="display:none">اللون</label>
+          <div class="o-colors" id="oColorSwatches" style="display:none"></div>
+          <input type="hidden" id="oColorValue">
           <label>ملاحظات</label><textarea id="oNotes" maxlength="500"></textarea>
           <button class="btn btn-primary" id="submitOrderBtn">تأكيد الطلب</button>
           <button class="btn btn-ghost" id="backToDetail">رجوع</button>

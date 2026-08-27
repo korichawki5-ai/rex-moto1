@@ -144,6 +144,32 @@ function revealOnScroll() {
 }
 
 // ═════════════════════════════════════════════════════════════
+// HELPERS: ألوان ومميزات ديناميكية (تُضاف من لوحة الإدارة)
+// ═════════════════════════════════════════════════════════════
+function RXesc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+// ألوان: صيغة قديمة ["الاسم"] أو صيغة جديدة [{name, image}]
+function normColors(p) {
+  const c = p && p.colors;
+  if (!Array.isArray(c)) return [];
+  return c
+    .map(x => (typeof x === "string"
+      ? { name: x.trim(), image: null }
+      : { name: String((x && x.name) || "").trim(), image: (x && x.image) || null }))
+    .filter(x => x.name)
+    .slice(0, 6);
+}
+// مميزات مخصصة من الادمين: [{label, value}]
+function normFeatures(p) {
+  const f = p && p.features;
+  if (!Array.isArray(f)) return [];
+  return f.filter(x => x && x.label && x.value).slice(0, 12);
+}
+
+// ═════════════════════════════════════════════════════════════
 // PRODUCT CARD RENDER
 // ═════════════════════════════════════════════════════════════
 function productCard(p) {
@@ -221,19 +247,15 @@ async function initHomePage() {
   renderProductGrid(document.getElementById("scooterGrid"), scooter.slice(0, 4));
   renderProductGrid(document.getElementById("accGrid"), acc.slice(0, 4));
 
-  // Categories images (defaults from public/images)
+  // Categories images — ثابتة دائماً (لا تتغير بصور المنتجات)
   const catsEl = document.getElementById("catsGrid");
   if (catsEl) {
-    const imgOf = (cat) => {
-      const found = all.find(p => p.category === cat);
-      return found ? RX.getProductMainImage(found) : `public/images/cat-${cat}.jpg`;
-    };
     catsEl.innerHTML = [
-      categoryCard("01", "موتور سايكل كهربائي", imgOf("moto"), "moto", "s1"),
-      categoryCard("02", "طروتينات وسكوترات", imgOf("scooter"), "scooter", "s2"),
-      categoryCard("03", "بطاريات وشواحن", imgOf("battery"), "battery", "s3"),
-      categoryCard("04", "إكسسوارات وخوذ", imgOf("accessory"), "accessory", "s4"),
-      categoryCard("05", "قطع غيار وصيانة", imgOf("part"), "part", "s5")
+      categoryCard("01", "موتور سايكل كهربائي", "public/images/cat-moto.jpg", "moto", "s1"),
+      categoryCard("02", "طروتينات وسكوترات", "public/images/cat-scooter.jpg", "scooter", "s2"),
+      categoryCard("03", "بطاريات وشواحن", "public/images/cat-battery.jpg", "battery", "s3"),
+      categoryCard("04", "إكسسوارات وخوذ", "public/images/cat-accessory.jpg", "accessory", "s4"),
+      categoryCard("05", "قطع غيار وصيانة", "public/images/cat-part.jpg", "part", "s5")
     ].join("");
   }
 
@@ -397,7 +419,8 @@ function renderProductDetail(p) {
   if (p.motorPower) stats.push(["قوة المحرك", p.motorPower + " W"]);
   if (p.battery) stats.push(["البطارية", p.battery]);
   if (p.warranty) stats.push(["الضمان", p.warranty]);
-  document.getElementById("pdStats").innerHTML = stats.map(([k, v]) => `<div class="pd-stat"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  normFeatures(p).forEach(f => stats.push([f.label, f.value]));
+  document.getElementById("pdStats").innerHTML = stats.map(([k, v]) => `<div class="pd-stat"><span class="k">${RXesc(k)}</span><span class="v">${RXesc(v)}</span></div>`).join("");
 
   // Images
   const imgs = RX.getProductImages(p);
@@ -411,14 +434,20 @@ function renderProductDetail(p) {
     thumbsEl.innerHTML = "";
   }
 
-  // Colors
+  // Colors — الضغط على لون يبدّل الصورة الرئيسية بصورته
   const colorWrap = document.getElementById("pdColors");
-  if (p.colors && p.colors.length) {
+  const pColors = normColors(p);
+  const galleryMain = imgs.length ? imgs[0] : "public/images/placeholder.svg";
+  if (pColors.length) {
     colorWrap.style.display = "";
-    colorWrap.querySelector(".color-chips").innerHTML = p.colors.map((c, i) => `<button type="button" class="color-chip ${i === 0 ? "active" : ""}" data-color="${c}">${c}</button>`).join("");
+    colorWrap.querySelector(".color-chips").innerHTML = pColors.map((c, i) =>
+      `<button type="button" class="color-chip ${i === 0 ? "active" : ""} ${c.image ? "has-img" : ""}" data-color="${RXesc(c.name)}" data-img="${c.image || ""}">${c.image ? `<img src="${c.image}" alt="${RXesc(c.name)}">` : ""}<span>${RXesc(c.name)}</span></button>`
+    ).join("");
     colorWrap.querySelectorAll(".color-chip").forEach(b => b.addEventListener("click", () => {
       colorWrap.querySelectorAll(".color-chip").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
+      mainEl.src = b.dataset.img || galleryMain;
+      document.querySelectorAll("#pdThumbs img").forEach(t => t.classList.remove("active"));
     }));
   } else {
     colorWrap.style.display = "none";
@@ -471,23 +500,55 @@ async function openOrder(id, opts = {}) {
   document.getElementById("mName").textContent = p.name;
   document.getElementById("mBrand").textContent = p.brand || "";
   document.getElementById("mPrice").innerHTML = RX.fmtDZD(p.price) + (RX.offerActive(p) && p.oldPrice ? `<span class="old">${RX.fmtDZ(p.oldPrice)} دج</span>` : "");
+  const oFeats = normFeatures(p);
   document.getElementById("mSpecs").innerHTML = `
     ${p.topSpeed ? `<div class="mf-spec"><span class="k">السرعة</span><span class="v">${p.topSpeed} km/h</span></div>` : ""}
     ${p.rangeKm ? `<div class="mf-spec"><span class="k">المدى</span><span class="v">${p.rangeKm} km</span></div>` : ""}
-    ${p.battery ? `<div class="mf-spec"><span class="k">البطارية</span><span class="v">${p.battery}</span></div>` : ""}
+    ${p.battery ? `<div class="mf-spec"><span class="k">البطارية</span><span class="v">${RXesc(p.battery)}</span></div>` : ""}
+    ${oFeats.map(f => `<div class="mf-spec full"><span class="k">${RXesc(f.label)}</span><span class="v">${RXesc(f.value)}</span></div>`).join("")}
   `;
-  // Colors
-  const colorSel = document.getElementById("oColor");
-  if (p.colors && p.colors.length) {
-    colorSel.parentElement.style.display = "";
-    colorSel.innerHTML = p.colors.map((c, i) => `<option value="${c}" ${i === 0 ? "selected" : ""}>${c}</option>`).join("");
+  // Colors — أزرار ألوان مع صور، والضغط يبدّل صورة المنتج
+  const pColors = normColors(p);
+  const mImgEl = document.getElementById("mImg");
+  const orderMainSrc = RX.getProductMainImage(p);
+  const mSw = document.getElementById("mColorSwatches");
+  const oSw = document.getElementById("oColorSwatches");
+  const mLab = document.getElementById("mColorLabel");
+  const oLab = document.getElementById("oColorLabel");
+  const oVal = document.getElementById("oColorValue");
+  let selColor = (opts.selectedColor && pColors.some(c => c.name === opts.selectedColor))
+    ? opts.selectedColor
+    : (pColors[0] ? pColors[0].name : "");
+  if (pColors.length) {
+    const swHtml = pColors.map(c =>
+      `<button type="button" class="o-color ${c.name === selColor ? "active" : ""}" data-color="${RXesc(c.name)}" data-img="${c.image || ""}">${c.image ? `<img src="${c.image}" alt="${RXesc(c.name)}">` : ""}<span>${RXesc(c.name)}</span></button>`
+    ).join("");
+    if (mSw) { mSw.innerHTML = swHtml; mSw.style.display = ""; if (mLab) mLab.style.display = ""; }
+    if (oSw) { oSw.innerHTML = swHtml; oSw.style.display = ""; if (oLab) oLab.style.display = ""; }
   } else {
-    colorSel.parentElement.style.display = "none";
-    colorSel.innerHTML = "";
+    [mSw, oSw].forEach(el => { if (el) { el.innerHTML = ""; el.style.display = "none"; } });
+    [mLab, oLab].forEach(el => { if (el) el.style.display = "none"; });
+  }
+  if (oVal) oVal.value = selColor;
+  const applyOrderColor = (name, img) => {
+    selColor = name;
+    if (oVal) oVal.value = name;
+    [mSw, oSw].forEach(el => {
+      if (!el) return;
+      el.querySelectorAll(".o-color").forEach(b => b.classList.toggle("active", b.dataset.color === name));
+    });
+    mImgEl.src = img || orderMainSrc;
+  };
+  [mSw, oSw].forEach(el => {
+    if (!el) return;
+    el.querySelectorAll(".o-color").forEach(b => b.addEventListener("click", () => applyOrderColor(b.dataset.color, b.dataset.img)));
+  });
+  if (selColor) {
+    const sc = pColors.find(c => c.name === selColor);
+    if (sc && sc.image) mImgEl.src = sc.image;
   }
   // Qty
   document.getElementById("oQty").value = opts.quantity || 1;
-  if (opts.selectedColor) colorSel.value = opts.selectedColor;
   // Reset form
   ["oName", "oPhone", "oCity", "oNotes"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   document.getElementById("detailStep").style.display = "flex";
@@ -526,7 +587,8 @@ async function submitOrder() {
   const city = document.getElementById("oCity").value.trim();
   const notes = document.getElementById("oNotes").value.trim();
   const qty = +document.getElementById("oQty").value || 1;
-  const color = document.getElementById("oColor").value || "";
+  const colorEl = document.getElementById("oColorValue");
+  const color = (colorEl && colorEl.value) || "";
   if (name.length < 2) return RX.toast("اكتب اسمك الكامل", "err");
   if (!/^[0-9+][0-9\s\-]{7,}$/.test(phone)) return RX.toast("رقم الهاتف غير صحيح", "err");
   const btn = document.getElementById("submitOrderBtn");

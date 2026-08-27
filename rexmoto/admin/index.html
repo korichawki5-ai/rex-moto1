@@ -213,7 +213,12 @@
       <div><label>قوة المحرك (W)</label><input id="pmMotor" type="number" min="0"></div>
       <div><label>البطارية</label><input id="pmBattery" maxlength="40" placeholder="72V 45Ah"></div>
     </div>
-    <label>الألوان (افصل بفاصلة)</label><input id="pmColors" placeholder="أحمر، أسود، أبيض">
+    <div class="section-title">الألوان — لكل لون: الاسم + صورة المودل بهذا اللون</div>
+    <div class="pcolors" id="pmColorRows"></div>
+    <button type="button" class="addrow" onclick="addColorRow()">＋ إضافة لون</button>
+    <div class="section-title">مميزات إضافية — تظهر في نافذة الطلب وصفحة المنتج</div>
+    <div class="pfeats" id="pmFeatRows"></div>
+    <button type="button" class="addrow" onclick="addFeatRow()">＋ إضافة ميزة</button>
     <label>الضمان</label><input id="pmWarranty" maxlength="40" placeholder="6 شهور">
     <label>الوصف</label><textarea id="pmDesc" maxlength="1000" rows="3"></textarea>
     <label>منتج مميز (يظهر في الصفحة الرئيسية)</label>

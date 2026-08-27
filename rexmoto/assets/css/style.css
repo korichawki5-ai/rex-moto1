@@ -497,6 +497,18 @@ footer{border-top:1px solid var(--line);padding:54px 0 30px;background:var(--bg2
   .filter-bar{grid-template-columns:1fr}
 }
 
+/* ═══════════ COLOR SWATCHES (اسم + صورة لكل لون) ═══════════ */
+.color-chip.has-img{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;min-height:58px}
+.color-chip.has-img img{width:44px;height:44px;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+.color-chip.has-img span{font-size:13px}
+.color-chip.has-img.active img{outline:2px solid var(--accent);outline-offset:1px}
+.o-colors{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}
+.o-color{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;min-height:50px;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--muted);font-family:var(--body);font-size:13px;cursor:pointer;transition:.2s var(--ease)}
+.o-color img{width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.o-color.active{border-color:var(--accent);color:var(--txt);background:var(--accent-dim)}
+.o-color.active img{outline:2px solid var(--accent);outline-offset:1px}
+.o-color-label{display:block;font-size:12.5px;color:var(--muted);margin:11px 0 6px}
+
 /* ═══════════ REDUCED MOTION ═══════════ */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
