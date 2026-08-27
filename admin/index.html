@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>لوحة الإدارة — REXMOTO</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M14 8 34 22l-12 2 6 16L14 26l12-2-12-6z' fill='%23e11d48'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo-mark"><svg width="28" height="28" viewBox="0 0 48 48" fill="none"><path d="M14 8 34 22l-12 2 6 16L14 26l12-2-12-6z" fill="#e11d48" stroke="#e11d48" stroke-width="1" stroke-linejoin="round"/></svg></div>
+      <div><b>REX<span>MOTO</span></b><small>لوحة الإدارة</small></div>
+    </div>
+    <nav class="snav">
+      <button class="active" data-view="dash" onclick="go('dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>الرئيسية</button>
+      <button data-view="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>الطلبات <span class="badge-dot" id="dotOrders" style="display:none">0</span></button>
+      <button data-view="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v9"/></svg>المنتجات</button>
+      <button data-view="testimonials" onclick="go('testimonials')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .8-5.3 4.7L18 22l-6-3.5L6 22l1.3-7.5L2 9.8 9 9z"/></svg>التقييمات <span class="badge-dot" id="dotTests" style="display:none">0</span></button>
+      <button data-view="settings" onclick="go('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>الإعدادات</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="side-foot">
+      <div class="user"><div class="av" id="userAv">A</div><div><b id="userName">—</b><small id="userEmail">—</small></div></div>
+      <a class="store" href="../index.html" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>عرض المتجر</a>
+      <a class="logout" id="logoutBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>تسجيل الخروج</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="mobile-top">
+      <div class="brand"><div class="logo-mark"><svg width="26" height="26" viewBox="0 0 48 48" fill="none"><path d="M14 8 34 22l-12 2 6 16L14 26l12-2-12-6z" fill="#e11d48"/></svg></div><b>REX<span>MOTO</span></b></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="view" id="view-dash">
+      <div class="topbar"><div><h1>لوحة المعلومات</h1><div class="sub" id="dashDate"></div></div></div>
+      <div class="stats" id="dashStats"></div>
+      <div class="panel"><div class="panel-head"><h3>النشاط — آخر 7 أيام</h3><span class="count">طلبات/يوم</span></div>
+        <div class="panel-body"><div class="quick-chart" id="chart"></div></div></div>
+      <div class="panel"><div class="panel-head"><h3>أحدث الطلبات</h3><span class="count" id="recentCount">0</span></div>
+        <div class="panel-body" id="recentTable"></div></div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="view" id="view-orders" style="display:none">
+      <div class="topbar"><div><h1>الطلبات</h1><div class="sub">الطلبات القادمة من العملاء</div></div></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>كل الطلبات</h3>
+          <div class="panel-head-actions">
+            <div class="panel-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="orderSearch" placeholder="بحث بالاسم أو الهاتف..."></div>
+            <select id="orderStatusFilter" class="btn btn-ghost btn-sm" style="height:38px">
+              <option value="">كل الحالات</option>
+              <option value="new">جديد</option>
+              <option value="contacted">تم التواصل</option>
+              <option value="confirmed">مؤكد</option>
+              <option value="delivered">تم التسليم</option>
+              <option value="cancelled">ملغى</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-body" id="ordersTable"></div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="view" id="view-products" style="display:none">
+      <div class="topbar"><div><h1>المنتجات</h1><div class="sub" id="prodSub">إدارة المخزون والأسعار والعروض</div></div>
+        <div class="topbar-right">
+          <button class="btn btn-ghost" style="height:42px" onclick="generateThumbs()" title="توليد صور مصغرة صغيرة للمنتجات — يسرّع تحميل البطاقات على الهواتف">⚡ توليد مصغرات</button>
+          <button class="btn btn-primary" onclick="openProductModal()">+ منتج جديد</button>
+        </div></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>كل المنتجات</h3>
+          <div class="panel-head-actions">
+            <div class="panel-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="prodSearch" placeholder="بحث..."></div>
+            <select id="prodCatFilter" class="btn btn-ghost btn-sm" style="height:38px">
+              <option value="">كل الفئات</option>
+              <option value="moto">موتور سايكل</option>
+              <option value="scooter">طروتينات</option>
+              <option value="battery">بطاريات</option>
+              <option value="helmet">خوذ</option>
+              <option value="accessory">إكسسوارات</option>
+              <option value="part">قطع غيار</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-body"><div class="prod-grid" id="prodGrid"></div></div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="view" id="view-testimonials" style="display:none">
+      <div class="topbar"><div><h1>التقييمات</h1><div class="sub">راجع التقييمات قبل نشرها</div></div></div>
+      <div class="panel">
+        <div class="panel-head"><h3>التقييمات المعلقة</h3>
+          <div class="panel-head-actions">
+            <select id="testFilter" class="btn btn-ghost btn-sm" style="height:38px">
+              <option value="pending">قيد المراجعة</option>
+              <option value="approved">موافق عليها</option>
+              <option value="rejected">مرفوضة</option>
+              <option value="">كل التقييمات</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-body" id="testList"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings" style="display:none">
+      <div class="topbar"><div><h1>الإعدادات</h1><div class="sub">بيانات المتجر — تحدّث المتجر فوراً</div></div></div>
+      <form id="settingsForm">
+        <div class="panel"><div class="panel-head"><h3>معلومات أساسية</h3></div>
+          <div class="panel-body">
+            <div class="settings-grid">
+              <div class="s-field"><label>اسم المحل</label><input name="storeName" required></div>
+              <div class="s-field"><label>البريد الإلكتروني</label><input name="email" type="email" dir="ltr"></div>
+              <div class="s-field"><label>رقم الهاتف (للعرض)</label><input name="phone" dir="ltr" placeholder="+213 ..."></div>
+              <div class="s-field"><label>رقم واتساب (بالأرقام فقط مع رمز الدولة)</label><input name="whatsapp" dir="ltr" placeholder="213550000000"></div>
+              <div class="s-field" style="grid-column:1/-1"><label>العنوان</label><input name="address"></div>
+              <div class="s-field" style="grid-column:1/-1"><label>رابط الخريطة (Google Maps embed URL)</label><input name="mapUrl" dir="ltr" placeholder="https://www.google.com/maps/embed?..."></div>
+              <div class="s-field" style="grid-column:1/-1"><label>أوقات العمل</label><input name="hours" placeholder="السبت – الخميس: 9:00 → 19:00"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><h3>روابط التواصل</h3></div>
+          <div class="panel-body">
+            <div class="settings-grid">
+              <div class="s-field"><label>فيسبوك</label><input name="facebook" dir="ltr" placeholder="https://facebook.com/..."></div>
+              <div class="s-field"><label>إنستغرام</label><input name="instagram" dir="ltr" placeholder="https://instagram.com/..."></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><h3>محتوى الصفحة الرئيسية</h3></div>
+          <div class="panel-body">
+            <div class="settings-grid">
+              <div class="s-field" style="grid-column:1/-1"><label>عنوان الصفحة (SEO Title)</label><input name="pageTitle" maxlength="70"></div>
+              <div class="s-field" style="grid-column:1/-1"><label>وصف الميتا (Meta Description)</label><textarea name="metaDescription" maxlength="160"></textarea></div>
+              <div class="s-field"><label>لون الأكسان الأساسي</label><input name="accentColor" type="color" value="#e11d48" style="height:46px;padding:4px"></div>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="savebtn" id="saveSettingsBtn">💾 حفظ الإعدادات</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobnav" id="mobnav">
+  <button class="active" data-view="dash" onclick="go('dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>الرئيسية</button>
+  <button data-view="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>الطلبات<span class="dot" id="mDotOrders" style="display:none"></span></button>
+  <button data-view="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/></svg>المنتجات</button>
+  <button data-view="testimonials" onclick="go('testimonials')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .8-5.3 4.7L18 22l-6-3.5L6 22l1.3-7.5L2 9.8 9 9z"/></svg>التقييمات<span class="dot" id="mDotTests" style="display:none"></span></button>
+  <button data-view="settings" onclick="go('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>إعدادات</button>
+</nav>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal" id="mOrder"><div class="mcard"><button class="close" onclick="closeModal('mOrder')">✕</button><h3>تفاصيل الطلب</h3><div id="mOrderBody"></div></div></div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal" id="mProduct"><div class="mcard wide">
+  <button class="close" onclick="closeModal('mProduct')">✕</button>
+  <h3 id="pmTitle">منتج جديد</h3>
+  <form id="productForm">
+    <input type="hidden" id="pmId">
+    <div class="form-row">
+      <div><label>اسم المنتج *</label><input id="pmName" required maxlength="100"></div>
+      <div><label>الماركة</label><input id="pmBrand" maxlength="40"></div>
+    </div>
+    <div class="form-row">
+      <div><label>الفئة *</label>
+        <select id="pmCat" required>
+          <option value="moto">موتور سايكل كهربائي</option>
+          <option value="scooter">طروتينات / سكوتر</option>
+          <option value="battery">بطاريات وشواحن</option>
+          <option value="helmet">خوذ</option>
+          <option value="accessory">إكسسوارات</option>
+          <option value="part">قطع غيار</option>
+        </select>
+      </div>
+      <div><label>الحالة</label>
+        <select id="pmStatus">
+          <option value="active">متوفر</option>
+          <option value="low">متبقي قليل</option>
+          <option value="out">نفد المخزون</option>
+          <option value="hidden">مخفي</option>
+          <option value="disabled">موقوف</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>السعر الحالي (دج) *</label><input id="pmPrice" type="number" min="0" step="100" required></div>
+      <div><label>السعر القديم (للعرض)</label><input id="pmOldPrice" type="number" min="0" step="100" placeholder="يترك فارغاً إن لا يوجد عرض"></div>
+    </div>
+    <div class="form-row">
+      <div><label>المخزون (الكمية)</label><input id="pmStock" type="number" min="0" value="1"></div>
+      <div><label>تاريخ انتهاء العرض (اختياري)</label><input id="pmOfferEnd" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div><label>السرعة القصوى (km/h)</label><input id="pmSpeed" type="number" min="0"></div>
+      <div><label>المدى (km)</label><input id="pmRange" type="number" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div><label>قوة المحرك (W)</label><input id="pmMotor" type="number" min="0"></div>
+      <div><label>البطارية</label><input id="pmBattery" maxlength="40" placeholder="72V 45Ah"></div>
+    </div>
+    <div class="section-title">الألوان — لكل لون: الاسم + صورة المودل بهذا اللون</div>
+    <div class="pcolors" id="pmColorRows"></div>
+    <button type="button" class="addrow" onclick="addColorRow()">＋ إضافة لون</button>
+    <div class="section-title">مميزات إضافية — تظهر في نافذة الطلب وصفحة المنتج</div>
+    <div class="pfeats" id="pmFeatRows"></div>
+    <button type="button" class="addrow" onclick="addFeatRow()">＋ إضافة ميزة</button>
+    <label>الضمان</label><input id="pmWarranty" maxlength="40" placeholder="6 شهور">
+    <label>الوصف</label><textarea id="pmDesc" maxlength="1000" rows="3"></textarea>
+    <label>منتج مميز (يظهر في الصفحة الرئيسية)</label>
+    <select id="pmFeatured"><option value="false">لا</option><option value="true">نعم</option></select>
+    <div class="section-title">صور المنتج</div>
+    <label>ارفع عدة صور — الأولى هي الرئيسية</label>
+    <div class="upload-zone" id="uploadZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <b>اسحب الصور هنا أو اضغط للاختيار</b>
+      <small>JPG/PNG/WebP — حد أقصى 5 ميغابايت للصورة</small>
+      <input type="file" id="pmFiles" accept="image/*" multiple hidden>
+    </div>
+    <div class="img-list" id="pmImgList"></div>
+    <div class="btn-row">
+      <button type="button" class="btn-ghost" onclick="closeModal('mProduct')">إلغاء</button>
+      <button type="submit" class="" id="pmSave">حفظ المنتج</button>
+    </div>
+  </form>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../assets/js/config.js"></script>
+<script type="module" src="../assets/js/admin.js"></script>
+</body>
+</html>
