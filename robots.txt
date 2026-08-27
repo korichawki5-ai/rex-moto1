@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /netlify/
-Disallow: /pages/
-
-Sitemap: /sitemap.xml
