@@ -83,10 +83,17 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: cors, body: JSON.stringify({ error: "الكمية المطلوبة غير متوفرة" }) };
     }
 
+    let mainImg = "";
+    if (Array.isArray(p.images) && p.images.length) {
+      const m = p.images.find(i => i.isMain) || p.images[0];
+      mainImg = m.url || m;
+    }
+    if (!mainImg) mainImg = p.imageUrl || "";
+
     const order = {
       productId,
       productName: p.name,
-      productImage: (p.images && p.images[0] && (p.images[0].url || p.images[0])) || p.imageUrl || "",
+      productImage: mainImg,
       unitPrice: p.price, // server-side price
       totalPrice: p.price * quantity,
       customerName,

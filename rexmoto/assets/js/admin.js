@@ -326,6 +326,28 @@ function renderProducts() {
 let editingProduct = null;
 let pendingImages = [];
 let existingImages = [];
+let mainPick = null; // {kind: "e"|"p", idx} — الصورة المختارة كصورة رئيسية
+
+// كل الصور (القديمة + الجديدة) بمعرّفات داخل مجموعتيها
+function allImageRefs() {
+  return [
+    ...existingImages.map((img, idx) => ({ kind: "e", idx })),
+    ...pendingImages.map((img, idx) => ({ kind: "p", idx }))
+  ];
+}
+// الصورة الرئيسية الفعلية: المختارة يدوياً، وإلا الأولى
+function resolveMain() {
+  const refs = allImageRefs();
+  if (!refs.length) return null;
+  if (mainPick) {
+    const groupLen = mainPick.kind === "e" ? existingImages.length : pendingImages.length;
+    if (mainPick.idx < groupLen) {
+      const offset = mainPick.kind === "e" ? 0 : existingImages.length;
+      return refs[offset + mainPick.idx];
+    }
+  }
+  return refs[0];
+}
 
 // ═════════════════════════════════════════════════════════════
 // DYNAMIC ROWS: مميزات إضافية + ألوان مع صور
@@ -413,7 +435,7 @@ function renderColorRows() {
 }
 
 window.openProductModal = function () {
-  editingProduct = null; pendingImages = []; existingImages = [];
+  editingProduct = null; pendingImages = []; existingImages = []; mainPick = null;
   document.getElementById("pmTitle").textContent = "منتج جديد";
   document.getElementById("productForm").reset();
   document.getElementById("pmId").value = "";
@@ -431,6 +453,8 @@ window.editProduct = function (id) {
   editingProduct = p;
   pendingImages = [];
   existingImages = (p.images || []).map(i => ({ ...i }));
+  const _mi = existingImages.findIndex(x => x.isMain);
+  mainPick = _mi >= 0 ? { kind: "e", idx: _mi } : null;
   document.getElementById("pmTitle").textContent = "تعديل المنتج";
   document.getElementById("pmId").value = p.id;
   document.getElementById("pmName").value = p.name || "";
@@ -472,9 +496,10 @@ window.editProduct = function (id) {
 
 function renderImageList() {
   const list = document.getElementById("pmImgList");
+  const mainRef = resolveMain();
   const all = [
-    ...existingImages.map((img, i) => ({ type: "e", url: img.url, isMain: img.isMain || i === 0, idx: i })),
-    ...pendingImages.map((img, i) => ({ type: "p", url: img.dataUrl, isMain: existingImages.length === 0 && i === 0, idx: i }))
+    ...existingImages.map((img, i) => ({ type: "e", url: img.url, isMain: !!(mainRef && mainRef.kind === "e" && mainRef.idx === i), idx: i })),
+    ...pendingImages.map((img, i) => ({ type: "p", url: img.dataUrl, isMain: !!(mainRef && mainRef.kind === "p" && mainRef.idx === i), idx: i }))
   ];
   if (!all.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:14px">لا توجد صور بعد</div>'; return; }
   list.innerHTML = all.map((img, i) => `
@@ -486,24 +511,21 @@ function renderImageList() {
 }
 
 window.setMainImage = function (i) {
-  const all = [
-    ...existingImages.map((img, idx) => ({ kind: "e", idx })),
-    ...pendingImages.map((img, idx) => ({ kind: "p", idx }))
-  ];
-  const t = all[i];
-  existingImages.forEach((x, idx) => x.isMain = (t.kind === "e" && t.idx === idx));
+  const refs = allImageRefs();
+  mainPick = refs[i] || null;
   renderImageList();
 };
 
 window.removeImage = function (i) {
-  const all = [
-    ...existingImages.map((img, idx) => ({ kind: "e", idx })),
-    ...pendingImages.map((img, idx) => ({ kind: "p", idx }))
-  ];
-  const t = all[i];
+  const refs = allImageRefs();
+  const t = refs[i];
   if (t.kind === "e") existingImages.splice(t.idx, 1);
   else pendingImages.splice(t.idx, 1);
-  if (existingImages.length && !existingImages.some(x => x.isMain)) existingImages[0].isMain = true;
+  // تعديل مرجع الصورة الرئيسية بعد الحذف
+  if (mainPick && mainPick.kind === t.kind) {
+    if (mainPick.idx === t.idx) mainPick = null;
+    else if (mainPick.idx > t.idx) mainPick.idx--;
+  }
   renderImageList();
 };
 
@@ -541,8 +563,15 @@ document.getElementById("productForm").addEventListener("submit", async e => {
   const btn = document.getElementById("pmSave");
   btn.disabled = true; btn.textContent = "جارٍ الحفظ...";
   try {
-    const finalImages = [...existingImages, ...pendingImages.map(pi => ({ url: pi.dataUrl, isMain: false }))];
-    if (finalImages.length) { finalImages[0].isMain = true; finalImages.forEach((img, i) => { if (i !== 0) img.isMain = false; }); }
+    const finalImages = [
+      ...existingImages.map(img => ({ url: img.url, isMain: false })),
+      ...pendingImages.map(pi => ({ url: pi.dataUrl, isMain: false }))
+    ];
+    const mainRef = resolveMain();
+    if (finalImages.length && mainRef) {
+      const fi = mainRef.kind === "e" ? mainRef.idx : existingImages.length + mainRef.idx;
+      if (fi >= 0 && fi < finalImages.length) finalImages[fi].isMain = true;
+    }
     // مصغرة صغيرة للبطاقات (تُسرّع الموقع على الهواتف)
     let thumbImage = null;
     const mainImgObj = finalImages.find(i => i.isMain) || finalImages[0];

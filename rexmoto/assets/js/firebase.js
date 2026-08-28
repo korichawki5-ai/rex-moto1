@@ -14,8 +14,7 @@ import {
   doc,
   addDoc,
   serverTimestamp,
-  limit,
-  select
+  limit
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import {
   getAuth
@@ -133,6 +132,8 @@ async function getSettings() {
 
 function applySettings(s) {
   if (!s) return;
+  // نحفظ الإعدادات حتى يستعملها أزرار واتساب في صفحة المنتج
+  if (window.RX) window.RX._settings = s;
   const storeName = s.storeName || "REXMOTO";
   document.querySelectorAll("[data-store-name]").forEach(el => el.textContent = storeName);
   document.title = s.pageTitle || (storeName + " — متجر دراجات وسكوترات كهربائية");
@@ -145,20 +146,11 @@ function applySettings(s) {
 // ═════════════════════════════════════════════════════════════
 // DATA FETCHING
 // ═════════════════════════════════════════════════════════════
-// حقول خفيفة للبطاقات فقط — نستثني الصور الكبيرة (base64) لسرعة التحميل
-const CARD_FIELDS = [
-  "name", "brand", "category", "status", "price", "oldPrice", "stockQuantity",
-  "offerEndsAt", "topSpeed", "rangeKm", "motorPower", "battery", "colors",
-  "warranty", "description", "isFeatured", "imageUrl", "thumbImage",
-  "features", "createdAt"
-];
-
 async function fetchProducts(options = {}) {
   const { category, visibleOnly = true } = options;
   const q = query(
     collection(db, "products"),
-    orderBy("createdAt", "desc"),
-    select(...CARD_FIELDS)
+    orderBy("createdAt", "desc")
   );
   const snap = await getDocs(q);
   let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -174,14 +166,21 @@ async function fetchProduct(id) {
 }
 
 async function fetchApprovedTestimonials() {
+  // where فقط (بدون orderBy) = لا يحتاج فهارس مركبة في Firestore
+  // والترتيب (الأحدث أولاً) يتم هنا على الجهاز
   const q = query(
     collection(db, "testimonials"),
     where("status", "==", "approved"),
-    orderBy("createdAt", "desc"),
-    limit(20)
+    limit(100)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const ts = t => {
+    const c = t && t.createdAt;
+    return c ? (c.toDate ? c.toDate().getTime() : new Date(c).getTime()) : 0;
+  };
+  list.sort((a, b) => ts(b) - ts(a));
+  return list;
 }
 
 async function submitOrder(data) {
