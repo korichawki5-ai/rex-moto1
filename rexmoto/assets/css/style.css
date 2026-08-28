@@ -225,7 +225,9 @@ header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);-webkit-back
 .tform textarea{height:100px;padding:12px 14px;resize:vertical}
 .tform input:focus,.tform textarea:focus{border-color:var(--accent)}
 .tform .btn{width:100%;margin-top:18px}
-.tform .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+/* حقل مضاد السبام المخفي — position:fixed حتى لا يخلق مساحة تمرير أفقية في RTL
+   (كان left:-9999px يكسر عرض الموقع في هواتف Android: صفحة عريضة 10000px والشاشة سوداء) */
+.tform .hp,.mstep .hp{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;white-space:nowrap;border:0;padding:0;margin:0}
 .stars-in{display:flex;gap:6px;margin-top:10px}
 .stars-in button{background:transparent;border:none;font-size:28px;color:var(--line);cursor:pointer;transition:.15s;line-height:1}
 .stars-in button.on{color:var(--accent)}
