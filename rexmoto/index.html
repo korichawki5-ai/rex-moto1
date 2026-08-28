@@ -29,15 +29,19 @@
 </script>
 </head>
 <body>
+<script>
+document.documentElement.classList.add("js");
+(function(){
+  function box(){
+    var d=document.getElementById("__dbg");
+    if(!d){d=document.createElement("div");d.id="__dbg";d.style.cssText="position:fixed;top:64px;right:10px;left:10px;z-index:99999;background:#2a0a0a;color:#ffb4b4;border:1px solid #f66;border-radius:10px;padding:10px;font:12px/1.6 monospace;max-height:35vh;overflow:auto;white-space:pre-wrap;direction:ltr";document.body.appendChild(d);}
+    return d;
+  }
+  window.addEventListener("error",function(e){box().textContent+="ERR: "+(e.message||"")+" @ "+((e.filename||"").split("/").pop())+":"+e.lineno+"\n";});
+  window.addEventListener("unhandledrejection",function(e){box().textContent+="PROMISE: "+((e.reason&&e.reason.message)||e.reason)+"\n";});
+})();
+</script>
 <div class="glow-field"><i class="g1"></i><i class="g2"></i></div>
-
-<!-- BOOT LOADER -->
-<div id="boot">
-  <div class="boot-logo"><h1>RE<span>X</span>MOTO</h1></div>
-  <div class="boot-line">طاقة للحركة · حرية لكل طريق</div>
-  <div class="boot-progress"><i></i></div>
-  <div class="boot-mono">جارٍ التشغيل</div>
-</div>
 
 <!-- HEADER -->
 <header>

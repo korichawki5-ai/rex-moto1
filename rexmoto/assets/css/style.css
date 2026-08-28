@@ -71,24 +71,6 @@ body::after{
 .glow-field .g1{width:520px;height:520px;top:-160px;inset-inline-end:-120px;background:radial-gradient(circle,rgba(225,29,72,.12),transparent 60%)}
 .glow-field .g2{width:420px;height:420px;bottom:-120px;inset-inline-start:-140px;background:radial-gradient(circle,rgba(225,29,72,.08),transparent 60%)}
 
-/* ═══════════ BOOT LOADER ═══════════ */
-#boot{
-  position:fixed;inset:0;background:var(--bg);z-index:3000;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
-  transition:opacity .7s var(--ease),visibility .7s;
-}
-#boot.done{opacity:0;visibility:hidden}
-.boot-logo{display:flex;align-items:center;gap:14px;animation:rise .7s var(--ease) both}
-.boot-logo h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:1px}
-.boot-logo h1 span{color:var(--accent)}
-.boot-line{color:var(--muted);font-size:14px;opacity:0;animation:fadeup .6s .3s var(--ease) both}
-.boot-progress{width:220px;height:3px;border-radius:99px;background:var(--line);overflow:hidden}
-.boot-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:load 1.2s var(--ease) forwards}
-.boot-mono{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.25em}
-@keyframes load{to{width:100%}}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-
 /* ═══════════ NAVBAR ═══════════ */
 header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(10,13,18,.82);border-bottom:1px solid var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:var(--nav-h);gap:16px}
@@ -421,8 +403,8 @@ footer{border-top:1px solid var(--line);padding:54px 0 30px;background:var(--bg2
 .error-page p{color:var(--muted);margin-bottom:24px}
 
 /* ═══════════ REVEAL ANIMATION ═══════════ */
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.reveal.in{opacity:1;transform:none}
+.js .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .reveal.in{opacity:1;transform:none}
 
 /* ═══════════ RESPONSIVE ═══════════ */
 @media(max-width:1024px){
@@ -512,5 +494,5 @@ footer{border-top:1px solid var(--line);padding:54px 0 30px;background:var(--bg2
 /* ═══════════ REDUCED MOTION ═══════════ */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
-  .reveal{opacity:1;transform:none}
+  .js .reveal{opacity:1!important;transform:none!important}
 }

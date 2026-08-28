@@ -5,16 +5,6 @@
 const RX = window.RX;
 
 // ═════════════════════════════════════════════════════════════
-// BOOT LOADER
-// ═════════════════════════════════════════════════════════════
-function hideBoot() {
-  const b = document.getElementById("boot");
-  if (b) b.classList.add("done");
-}
-window.addEventListener("load", () => setTimeout(hideBoot, 1200));
-setTimeout(hideBoot, 2000);
-
-// ═════════════════════════════════════════════════════════════
 // MOBILE MENU
 // ═════════════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
@@ -41,6 +31,14 @@ function closeAllModals() {
 // PAGE ROUTER (detect current page)
 // ═════════════════════════════════════════════════════════════
 async function initPage() {
+  // حماية: إن تعذّر تحميل Firebase (انقطاع إنترنت أو حجب) — أظهر الصفحة كاملة مع رسالة
+  if (!RX || typeof RX.fetchProducts !== "function") {
+    document.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
+    const el = document.getElementById("featuredGrid") || document.getElementById("productsGrid");
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>⚠️ تعذّر تجهيز الموقع</h3><p>تأكد من اتصالك بالإنترنت ثم أعد تحميل الصفحة.</p></div>`;
+    return;
+  }
+
   const path = location.pathname;
   try {
     const settings = await RX.getSettings();
@@ -237,8 +235,9 @@ function categoryCard(num, title, img, target, spanClass) {
 // ═════════════════════════════════════════════════════════════
 async function initHomePage() {
   // جلب المنتجات والتقييمات بالتوازي (تقليل زمن الانتظار)
+  let loadFailed = false;
   const [all, tests] = await Promise.all([
-    RX.fetchProducts().catch(e => { console.warn(e); return []; }),
+    RX.fetchProducts().catch(e => { loadFailed = true; console.warn(e); return []; }),
     RX.fetchApprovedTestimonials().catch(() => [])
   ]);
   const moto = all.filter(p => p.category === "moto");
@@ -250,6 +249,12 @@ async function initHomePage() {
   renderProductGrid(document.getElementById("motoGrid"), moto.slice(0, 4));
   renderProductGrid(document.getElementById("scooterGrid"), scooter.slice(0, 4));
   renderProductGrid(document.getElementById("accGrid"), acc.slice(0, 4));
+
+  // إن فشل جلب المنتجات (انقطاع إنترنت أو عطل) — رسالة واضحة بدل شاشة فارغة
+  if (loadFailed) {
+    const el = document.getElementById("featuredGrid");
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>⚠️ تعذّر تحميل المنتجات</h3><p>تأكد من اتصالك بالإنترنت ثم أعد تحميل الصفحة.</p></div>`;
+  }
 
   // Categories images — ثابتة دائماً (لا تتغير بصور المنتجات)
   const catsEl = document.getElementById("catsGrid");
@@ -336,7 +341,8 @@ async function initProductsPage() {
   if (!grid) return;
   grid.classList.add("skeleton-grid");
   grid.innerHTML = Array(6).fill(0).map(() => `<div class="pcard"><div class="imgbox skeleton" style="aspect-ratio:4/3"></div><div class="body"><div class="skeleton" style="height:16px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:90%;margin-bottom:18px"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>`).join("");
-  _allProducts = await RX.fetchProducts().catch(e => { console.warn(e); return []; });
+  let loadFailed = false;
+  _allProducts = await RX.fetchProducts().catch(e => { loadFailed = true; console.warn(e); return []; });
   grid.classList.remove("skeleton-grid");
 
   // Populate brand filter
@@ -358,6 +364,10 @@ async function initProductsPage() {
   });
 
   applyFilters();
+  if (loadFailed) {
+    const el = document.getElementById("productsGrid");
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>⚠️ تعذّر تحميل المنتجات</h3><p>تأكد من اتصالك بالإنترنت ثم أعد تحميل الصفحة.</p></div>`;
+  }
 }
 
 function applyFilters() {
