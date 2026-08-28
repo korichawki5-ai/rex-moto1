@@ -14,7 +14,8 @@ import {
   doc,
   addDoc,
   serverTimestamp,
-  limit
+  limit,
+  select
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import {
   getAuth
@@ -59,6 +60,12 @@ function getProductImages(p) {
   }
   if (p.imageUrl) return [p.imageUrl];
   return [];
+}
+
+// صورة مصغرة للبطاقات (خفيفة) — مع رجوع ذكي للصيغة الكاملة
+function getProductThumb(p) {
+  if (p && p.thumbImage) return p.thumbImage;
+  return getProductMainImage(p);
 }
 
 function isProductVisible(p) {
@@ -138,11 +145,20 @@ function applySettings(s) {
 // ═════════════════════════════════════════════════════════════
 // DATA FETCHING
 // ═════════════════════════════════════════════════════════════
+// حقول خفيفة للبطاقات فقط — نستثني الصور الكبيرة (base64) لسرعة التحميل
+const CARD_FIELDS = [
+  "name", "brand", "category", "status", "price", "oldPrice", "stockQuantity",
+  "offerEndsAt", "topSpeed", "rangeKm", "motorPower", "battery", "colors",
+  "warranty", "description", "isFeatured", "imageUrl", "thumbImage",
+  "features", "createdAt"
+];
+
 async function fetchProducts(options = {}) {
   const { category, visibleOnly = true } = options;
   const q = query(
     collection(db, "products"),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "desc"),
+    select(...CARD_FIELDS)
   );
   const snap = await getDocs(q);
   let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -201,7 +217,7 @@ async function submitTestimonial(data) {
 window.RX = {
   app, db, auth,
   fmtDZD, fmtDZ, waLink, telLink, slugify,
-  getProductMainImage, getProductImages, isProductVisible, isProductAvailable,
+  getProductMainImage, getProductImages, getProductThumb, isProductVisible, isProductAvailable,
   offerActive, discountPercent, stockLabel,
   getSettings, applySettings,
   fetchProducts, fetchProduct, fetchApprovedTestimonials,

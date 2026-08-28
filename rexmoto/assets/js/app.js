@@ -173,7 +173,7 @@ function normFeatures(p) {
 // PRODUCT CARD RENDER
 // ═════════════════════════════════════════════════════════════
 function productCard(p) {
-  const mainImg = RX.getProductMainImage(p);
+  const mainImg = RX.getProductThumb(p);
   const st = RX.stockLabel(p);
   const off = RX.discountPercent(p);
   const badge = off > 0
@@ -236,7 +236,11 @@ function categoryCard(num, title, img, target, spanClass) {
 // HOME PAGE
 // ═════════════════════════════════════════════════════════════
 async function initHomePage() {
-  const all = await RX.fetchProducts().catch(e => { console.warn(e); return []; });
+  // جلب المنتجات والتقييمات بالتوازي (تقليل زمن الانتظار)
+  const [all, tests] = await Promise.all([
+    RX.fetchProducts().catch(e => { console.warn(e); return []; }),
+    RX.fetchApprovedTestimonials().catch(() => [])
+  ]);
   const moto = all.filter(p => p.category === "moto");
   const scooter = all.filter(p => p.category === "scooter");
   const acc = all.filter(p => ["battery", "accessory", "helmet", "part"].includes(p.category));
@@ -259,8 +263,7 @@ async function initHomePage() {
     ].join("");
   }
 
-  // Testimonials
-  const tests = await RX.fetchApprovedTestimonials().catch(() => []);
+  // Testimonials (جلبت بالتوازي مع المنتجات)
   renderTestimonials(tests);
 
   // Hero image — ثابتة دائماً (الصورة الافتراضية public/images/hero-moto.jpg)
@@ -545,9 +548,9 @@ async function openOrder(id, opts = {}) {
   // Qty
   document.getElementById("oQty").value = opts.quantity || 1;
   // Reset form
-  ["oName", "oPhone", "oCity", "oNotes"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-  document.getElementById("detailStep").style.display = "flex";
-  document.getElementById("formStep").style.display = "none";
+  ["oName", "oLastName", "oPhone", "oCity", "oNotes"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  // مباشرة إلى استمارة الطلب (بدون خطوة وسطى)
+  document.getElementById("formStep").style.display = "flex";
   document.getElementById("successStep").classList.remove("on");
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -556,34 +559,35 @@ async function openOrder(id, opts = {}) {
 window.openOrder = openOrder;
 
 document.addEventListener("click", e => {
-  if (e.target.id === "goOrderBtn") showOrderForm();
-  if (e.target.id === "backToDetail") showOrderDetail();
   if (e.target.id === "modalClose") closeAllModals();
   const modal = document.getElementById("orderModal");
   if (e.target === modal) closeAllModals();
 });
-function showOrderForm() {
-  document.getElementById("detailStep").style.display = "none";
-  document.getElementById("formStep").style.display = "flex";
-  document.getElementById("successStep").classList.remove("on");
-}
-function showOrderDetail() {
-  document.getElementById("detailStep").style.display = "flex";
-  document.getElementById("formStep").style.display = "none";
-}
 document.addEventListener("DOMContentLoaded", () => {
   const submit = document.getElementById("submitOrderBtn");
   if (submit) submit.addEventListener("click", submitOrder);
+  // أزرار الكمية داخل نافذة الطلب
+  const oQty = document.getElementById("oQty");
+  const modalBox = document.getElementById("orderModal");
+  if (oQty && modalBox) {
+    const minus = modalBox.querySelector("#qtyMinus");
+    const plus = modalBox.querySelector("#qtyPlus");
+    if (minus) minus.addEventListener("click", () => { oQty.value = Math.max(1, +oQty.value - 1); });
+    if (plus) plus.addEventListener("click", () => { oQty.value = Math.min(20, +oQty.value + 1); });
+  }
 });
 async function submitOrder() {
   if (!_orderCtx) return;
   const name = document.getElementById("oName").value.trim();
+  const lastName = ((document.getElementById("oLastName") || {}).value || "").trim();
+  const fullName = [name, lastName].filter(Boolean).join(" ");
   const phone = document.getElementById("oPhone").value.trim();
   const city = document.getElementById("oCity").value.trim();
   const notes = document.getElementById("oNotes").value.trim();
   const qty = +document.getElementById("oQty").value || 1;
   const colorEl = document.getElementById("oColorValue");
   const color = (colorEl && colorEl.value) || "";
+  const hp = (document.querySelector("#formStep input[name=website]") || {}).value || "";
   if (name.length < 2) return RX.toast("اكتب اسمك الكامل", "err");
   if (!/^[0-9+][0-9\s\-]{7,}$/.test(phone)) return RX.toast("رقم الهاتف غير صحيح", "err");
   const btn = document.getElementById("submitOrderBtn");
@@ -591,12 +595,13 @@ async function submitOrder() {
   try {
     await RX.submitOrder({
       productId: _orderCtx.product.id,
-      customerName: name,
+      customerName: fullName,
       phone,
       city,
       quantity: qty,
       selectedColor: color,
-      notes
+      notes,
+      website: hp
     });
     document.getElementById("formStep").style.display = "none";
     document.getElementById("successStep").classList.add("on");

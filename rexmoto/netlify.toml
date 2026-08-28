@@ -1,7 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  command = "npm install --no-audit --no-fund"
+  command = "npm install --no-audit --no-fund && npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -43,21 +43,23 @@
 
 # ═══════════════════════════════════════════
 # CACHE STATIC ASSETS
+# (max-age=0 + must-revalidate = المتصفح يسأل الخادم عند كل زيارة،
+#  ولا يحمل الملف إلا إن تغيّر فعلاً — تحديثات فورية بدون مشاكل cache)
 # ═══════════════════════════════════════════
 [[headers]]
   for = "/assets/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/assets/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/public/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=300, must-revalidate"
 
 [[headers]]
   for = "/manifest.webmanifest"

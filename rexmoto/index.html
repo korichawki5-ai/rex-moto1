@@ -245,7 +245,7 @@
         <img class="mv-img" id="mImg" src="" alt="صورة المنتج">
       </div>
       <div class="modal-side">
-        <div class="mstep" id="detailStep">
+        <div class="mstep" id="formStep">
           <span class="mf-brand" id="mBrand"></span>
           <h3 id="mName"></h3>
           <div class="mf-price" id="mPrice"></div>
@@ -253,14 +253,9 @@
           <label class="o-color-label" id="mColorLabel" style="display:none">اللون</label>
           <div class="o-colors" id="mColorSwatches" style="display:none"></div>
           <div class="mf-divider"></div>
-          <button class="btn btn-primary" id="goOrderBtn">اطلب هذا المنتج</button>
-          <div class="note">اضغط "اطلب" لملء بياناتك وسيتواصل معك صاحب المحل.</div>
-        </div>
-        <div class="mstep" id="formStep" style="display:none">
-          <h3>بيانات الطلب</h3>
-          <div class="mf-divider"></div>
           <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off">
-          <label>الاسم الكامل *</label><input type="text" id="oName" placeholder="اكتب اسمك" required autocomplete="name">
+          <label>الاسم *</label><input type="text" id="oName" placeholder="اكتب اسمك" required autocomplete="given-name">
+          <label>اللقب</label><input type="text" id="oLastName" placeholder="اسم العائلة" autocomplete="family-name">
           <label>رقم الهاتف *</label><input type="tel" id="oPhone" placeholder="05xx xx xx xx" required autocomplete="tel" inputmode="tel">
           <label>المدينة</label><input type="text" id="oCity" placeholder="مدينتك" autocomplete="address-level2">
           <label>الكمية</label>
@@ -270,8 +265,7 @@
           <input type="hidden" id="oColorValue">
           <label>ملاحظات</label><textarea id="oNotes" placeholder="أي تفاصيل إضافية..." maxlength="500"></textarea>
           <button class="btn btn-primary" id="submitOrderBtn">تأكيد الطلب</button>
-          <button class="btn btn-ghost" id="backToDetail">رجوع</button>
-          <div class="note">بياناتك محمية ولا تُشارك مع أي طرف ثالث.</div>
+          <div class="note">سيصل طلبك إلى المحل مباشرة — وسيتواصل معك صاحب المحل لتأكيد الطلب.</div>
         </div>
         <div class="success" id="successStep">
           <div class="ok"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>

@@ -98,6 +98,27 @@ function compressImage(file, opts = {}) {
   });
 }
 
+// توليد صورة مصغرة صغيرة (~560px) لبطاقات المنتجات — تُسرّع الموقع على الهواتف
+function makeThumbFromDataUrl(dataUrl, maxW = 560, quality = 0.72) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch (e) { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    } catch (e) { resolve(null); }
+  });
+}
+
 // ═════════════════════════════════════════════════════════════
 // AUTH
 // ═════════════════════════════════════════════════════════════
@@ -522,6 +543,12 @@ document.getElementById("productForm").addEventListener("submit", async e => {
   try {
     const finalImages = [...existingImages, ...pendingImages.map(pi => ({ url: pi.dataUrl, isMain: false }))];
     if (finalImages.length) { finalImages[0].isMain = true; finalImages.forEach((img, i) => { if (i !== 0) img.isMain = false; }); }
+    // مصغرة صغيرة للبطاقات (تُسرّع الموقع على الهواتف)
+    let thumbImage = null;
+    const mainImgObj = finalImages.find(i => i.isMain) || finalImages[0];
+    if (mainImgObj && typeof mainImgObj.url === "string" && mainImgObj.url.startsWith("data:")) {
+      thumbImage = await makeThumbFromDataUrl(mainImgObj.url);
+    }
     const featuresData = featRows
       .map(r => ({ label: (r.label || "").trim().slice(0, 40), value: (r.value || "").trim().slice(0, 60) }))
       .filter(r => r.label && r.value)
@@ -550,6 +577,7 @@ document.getElementById("productForm").addEventListener("submit", async e => {
       description: document.getElementById("pmDesc").value.trim() || null,
       isFeatured: document.getElementById("pmFeatured").value === "true",
       images: finalImages,
+      thumbImage,
       updatedAt: serverTimestamp()
     };
 
@@ -579,6 +607,24 @@ window.deleteProduct = async function (id) {
     await deleteDoc(doc(db, "products", id));
     toast("تم حذف المنتج");
   } catch (e) { toast("تعذّر الحذف", "err"); }
+};
+
+// توليد مصغرات للمنتجات الحالية التي لا تملكها (تحسين سرعة البطاقات)
+window.generateThumbs = async function () {
+  if (!confirm("سيتم توليد صورة مصغرة صغيرة لكل منتج يفتقر إليها — لتسريع تحميل البطاقات على الهواتف. متابعة؟")) return;
+  let ok = 0, skip = 0;
+  for (const p of products) {
+    if (p.thumbImage) { skip++; continue; }
+    const main = productMainImage(p);
+    if (typeof main === "string" && main.startsWith("data:")) {
+      try {
+        const t = await makeThumbFromDataUrl(main);
+        if (t) { await updateDoc(doc(db, "products", p.id), { thumbImage: t }); ok++; continue; }
+      } catch (e) { /* نتخطى عند الخطأ */ }
+    }
+    skip++;
+  }
+  toast(`تم: ${ok} مصغرة جديدة — تخطي ${skip}`);
 };
 
 // ═════════════════════════════════════════════════════════════
