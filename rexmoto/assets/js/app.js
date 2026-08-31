@@ -477,7 +477,10 @@ function renderProductDetail(p) {
   _pdSelectedColor = pColors.length ? pColors[0].name : "";
 
   // ملاحظة: زر "اطلب الآن" يُربط بالإرسال في setupOrderPanel (الاستمارة فوقه)
-  document.title = `${p.name} — REXMOTO`;
+  // عنوان التبويب: اسم المتجر أولاً ثم اسم المنتج
+  // (كان يظهر "Rex evo — REXMOTO" فيبدو أن المتجر اسمه "Rex evo" — غيرناه)
+  const storeTtl = (window.RX && RX._settings && RX._settings.storeName) || "REX MOTO";
+  document.title = `${storeTtl} — ${p.name}`;
 }
 
 window.switchPdImg = function (thumb, src) {
@@ -548,7 +551,7 @@ async function submitPodOrder() {
   const cSel = document.getElementById("oCommune");
   const cFr = cSel ? cSel.value : "";
   const cInfo = wInfo ? wInfo[3].find(c => c[1] === cFr) : null;
-  const notes = ((document.getElementById("oNotes") || {}).value || "").trim();
+  // ملاحظات حُذفت من الاستمارة (طلب بدون تفاصيل إضافية)
   const hp = ((document.querySelector("#pdOrderForm input[name=website]") || {}).value) || "";
 
   if (name.length < 3) return RX.toast("اكتب اسمك الكامل (الاسم واللقب)", "err");
@@ -569,7 +572,6 @@ async function submitPodOrder() {
       communeFr: cInfo[1],
       city: [wCode, wInfo[1], cInfo[1]].filter(Boolean).join(" - "),
       selectedColor: _pdSelectedColor || "",
-      notes,
       quantity: 1, // الكمية ثابتة — محل دراجات وسكوترات
       website: hp
     });
