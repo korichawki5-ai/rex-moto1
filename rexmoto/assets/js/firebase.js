@@ -183,31 +183,40 @@ async function fetchApprovedTestimonials() {
   return list;
 }
 
-async function submitOrder(data) {
-  // عبر Netlify Function للتحقق الإضافي
-  const endpoint = (cfg.apiBase || "/.netlify/functions") + "/submit-order";
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
+// ═════════════════════════════════════════════════════════════
+// SERVER ENDPOINTS (Vercel Functions — مع رجوع تلقائي لـ Netlify)
+// النشر الجديد على Vercel: /api/submit-order
+// إذا لم تُجب (مثلاً أثناء الانتقال) يجرب المسار القديم تلقائياً.
+// ═════════════════════════════════════════════════════════════
+async function postJSON(path, data) {
+  const bases = [];
+  [cfg.apiBase || "/api", "/.netlify/functions"].forEach(b => {
+    if (b && !bases.includes(b)) bases.push(b);
   });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(json.error || "حدث خطأ أثناء إرسال الطلب");
+  let lastErr = null;
+  for (const base of bases) {
+    try {
+      const res = await fetch(base + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "حدث خطأ أثناء الإرسال");
+      return json;
+    } catch (e) {
+      lastErr = e;
+    }
   }
-  return json;
+  throw lastErr || new Error("تعذّر الإرسال");
+}
+
+async function submitOrder(data) {
+  return postJSON("/submit-order", data);
 }
 
 async function submitTestimonial(data) {
-  const endpoint = (cfg.apiBase || "/.netlify/functions") + "/submit-testimonial";
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || "حدث خطأ أثناء إرسال التقييم");
-  return json;
+  return postJSON("/submit-testimonial", data);
 }
 
 // ═════════════════════════════════════════════════════════════

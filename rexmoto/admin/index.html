@@ -151,6 +151,29 @@
             </div>
           </div>
         </div>
+        <div class="panel"><div class="panel-head"><h3>صور الواجهة — الهيرو والفئات (بدّل الصور الجاهزة بصورك الحقيقية)</h3></div>
+          <div class="panel-body">
+            <p class="sf-hint">هذه هي الصور الظاهرة في أعلى الصفحة الرئيسية وفي قسم «اختر فئتك». ارفع صورة من جهازك — تُضغط وتُحفظ تلقائياً. اضغط «استرجاع الافتراضية» لإعادة الصورة الجاهزة. <b>لا تنسَ الضغط على «حفظ الإعدادات» في الأسفل بعد تغيير الصور.</b></p>
+            <div class="settings-grid">
+              <div class="s-field" style="grid-column:1/-1">
+                <label>صورة الهيرو (الواجهة الرئيسية)</label>
+                <div class="si-box" id="siBoxHero">
+                  <span class="si-empty">الصورة الافتراضية</span>
+                  <div class="si-actions">
+                    <button type="button" class="cr-btn" onclick="document.getElementById('siFileHero').click()">📷 اختيار صورة</button>
+                    <button type="button" class="cr-btn danger" onclick="clearSiteImage('hero',false)">استرجاع الافتراضية</button>
+                  </div>
+                  <input type="file" id="siFileHero" accept="image/*" hidden onchange="onSiteImage('hero',this,false)">
+                </div>
+                <small style="color:var(--muted)">يُفضَّل صورة أفقية كبيرة (مثال: 1600×900) — تُضغط تلقائياً</small>
+              </div>
+              <div id="siCatsWrap" style="grid-column:1/-1">
+                <label>صور الفئات (تظهر في «اختر فئتك» — 5 صور)</label>
+                <div class="settings-grid" id="siCats"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <button type="submit" class="savebtn" id="saveSettingsBtn">💾 حفظ الإعدادات</button>
       </form>
     </section>
@@ -231,7 +254,7 @@
     <div class="upload-zone" id="uploadZone">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <b>اسحب الصور هنا أو اضغط للاختيار</b>
-      <small>JPG/PNG/WebP — حد أقصى 5 ميغابايت للصورة</small>
+      <small>JPG/PNG/WebP — حتى 25 ميغابايت للصورة (تُضغط وتُصغَّر تلقائياً)</small>
       <input type="file" id="pmFiles" accept="image/*" multiple hidden>
     </div>
     <div class="img-list" id="pmImgList"></div>

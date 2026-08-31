@@ -201,7 +201,7 @@ function productCard(p) {
     </div>
     <div class="actions">
       <button class="btn btn-ghost" onclick="event.stopPropagation();location.href='product.html?id=${p.id}'">عرض التفاصيل</button>
-      <button class="btn btn-primary" onclick="event.stopPropagation();openOrder('${p.id}')">اطلب الآن</button>
+      <button class="btn btn-primary" onclick="event.stopPropagation();location.href='product.html?id=${p.id}&order=1'">اطلب الآن</button>
     </div>
   </article>`;
 }
@@ -256,23 +256,28 @@ async function initHomePage() {
     if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>⚠️ تعذّر تحميل المنتجات</h3><p>تأكد من اتصالك بالإنترنت ثم أعد تحميل الصفحة.</p></div>`;
   }
 
-  // Categories images — ثابتة دائماً (لا تتغير بصور المنتجات)
+  // 📷 صور الفئات: يضعها المدير من لوحة الإدارة (الإعدادات → صور الواجهة)
+  // وإن لم يضعها تبقى الصور الجاهزة الافتراضية
+  const st = (window.RX && RX._settings) || {};
+  const cimgs = (st && st.catImages) || {};
   const catsEl = document.getElementById("catsGrid");
   if (catsEl) {
     catsEl.innerHTML = [
-      categoryCard("01", "موتور سايكل كهربائي", "public/images/cat-moto.jpg", "moto", "s1"),
-      categoryCard("02", "طروتينات وسكوترات", "public/images/cat-scooter.jpg", "scooter", "s2"),
-      categoryCard("03", "بطاريات وشواحن", "public/images/cat-battery.jpg", "battery", "s3"),
-      categoryCard("04", "إكسسوارات وخوذ", "public/images/cat-accessory.jpg", "accessory", "s4"),
-      categoryCard("05", "قطع غيار وصيانة", "public/images/cat-part.jpg", "part", "s5")
+      categoryCard("01", "موتور سايكل كهربائي", cimgs.moto || "public/images/cat-moto.jpg", "moto", "s1"),
+      categoryCard("02", "طروتينات وسكوترات", cimgs.scooter || "public/images/cat-scooter.jpg", "scooter", "s2"),
+      categoryCard("03", "بطاريات وشواحن", cimgs.battery || "public/images/cat-battery.jpg", "battery", "s3"),
+      categoryCard("04", "إكسسوارات وخوذ", cimgs.accessory || "public/images/cat-accessory.jpg", "accessory", "s4"),
+      categoryCard("05", "قطع غيار وصيانة", cimgs.part || "public/images/cat-part.jpg", "part", "s5")
     ].join("");
+  }
+
+  // 📷 صورة الهيرو: من الإعدادات إن وُجدت، وإلا الصورة الجاهزة
+  if (st.heroImage) {
+    document.querySelectorAll("[data-hero-img]").forEach(el => { el.src = st.heroImage; });
   }
 
   // Testimonials (جلبت بالتوازي مع المنتجات)
   renderTestimonials(tests);
-
-  // Hero image — ثابتة دائماً (الصورة الافتراضية public/images/hero-moto.jpg)
-  // لا تتغير بصور المنتجات
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -394,6 +399,7 @@ function applyFilters() {
 // PRODUCT DETAIL PAGE
 // ═════════════════════════════════════════════════════════════
 let _currentProduct = null;
+let _pdSelectedColor = "";
 async function initProductDetailPage() {
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
@@ -405,10 +411,14 @@ async function initProductDetailPage() {
   }
   _currentProduct = p;
   renderProductDetail(p);
-  // Related
-  const all = await RX.fetchProducts().catch(() => []);
-  const related = all.filter(x => x.id !== p.id && (x.category === p.category || x.brand === p.brand)).slice(0, 4);
-  renderProductGrid(document.getElementById("relatedGrid"), related);
+  setupOrderPanel(p);
+  // إذا جاء الزائر من زر "اطلب الآن" (بطاقة/زر) — مرّر مباشرة إلى الاستمارة
+  if (params.get("order") === "1") {
+    setTimeout(() => {
+      const el = document.getElementById("pdOrderForm");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 350);
+  }
 }
 
 function renderProductDetail(p) {
@@ -456,27 +466,17 @@ function renderProductDetail(p) {
       b.classList.add("active");
       mainEl.src = b.dataset.img || galleryMain;
       document.querySelectorAll("#pdThumbs img").forEach(t => t.classList.remove("active"));
+      // تحديث اللون المختار في استمارة الطلب
+      _pdSelectedColor = b.dataset.color || "";
+      updatePodColor();
     }));
   } else {
     colorWrap.style.display = "none";
   }
+  // اللون الافتراضي = أول لون
+  _pdSelectedColor = pColors.length ? pColors[0].name : "";
 
-  // Qty
-  const qtyInput = document.getElementById("pdQty");
-  document.getElementById("qtyMinus").addEventListener("click", () => { qtyInput.value = Math.max(1, +qtyInput.value - 1); });
-  document.getElementById("qtyPlus").addEventListener("click", () => { qtyInput.value = Math.min(p.stockQuantity || 20, +qtyInput.value + 1); });
-
-  // Order buttons
-  document.getElementById("pdOrderBtn").addEventListener("click", () => openOrderFromDetail(p));
-  const waBtn = document.getElementById("pdWaBtn");
-  waBtn.addEventListener("click", () => {
-    const s = window.RX && window.RX._settings ? window.RX._settings : null;
-    const wa = (s && s.whatsapp) || window.REXMOTO_CONFIG.whatsappDefault;
-    const msg = `مرحباً، أرغب بالاستفسار عن: ${p.name} — السعر: ${RX.fmtDZD(p.price)} دج`;
-    window.open(RX.waLink(wa, msg), "_blank");
-  });
-
-  // Set breadcrumb
+  // ملاحظة: زر "اطلب الآن" يُربط بالإرسال في setupOrderPanel (الاستمارة فوقه)
   document.title = `${p.name} — REXMOTO`;
 }
 
@@ -486,139 +486,102 @@ window.switchPdImg = function (thumb, src) {
   thumb.classList.add("active");
 };
 
-function openOrderFromDetail(p) {
-  const qty = +document.getElementById("pdQty").value || 1;
-  const colorBtn = document.querySelector("#pdColors .color-chip.active");
-  const color = colorBtn ? colorBtn.dataset.color : "";
-  openOrder(p.id, { quantity: qty, selectedColor: color });
-}
-
 // ═════════════════════════════════════════════════════════════
-// ORDER MODAL
+// ORDER FORM — مدمج في صفحة المنتج (فوق زر "اطلب الآن")
+// بدون نافذة منبثقة: الاستمارة ظاهرة مباشرة في الصفحة
 // ═════════════════════════════════════════════════════════════
-let _orderCtx = null;
-async function openOrder(id, opts = {}) {
-  const p = await RX.fetchProduct(id);
-  if (!p) return RX.toast("المنتج غير متوفر", "err");
-  _orderCtx = { product: p, ...opts };
-  const modal = document.getElementById("orderModal");
-  // Visual
-  document.getElementById("mImg").src = RX.getProductMainImage(p);
-  document.getElementById("mImg").alt = p.name;
-  document.getElementById("mName").textContent = p.name;
-  document.getElementById("mBrand").textContent = p.brand || "";
-  document.getElementById("mPrice").innerHTML = RX.fmtDZD(p.price) + (RX.offerActive(p) && p.oldPrice ? `<span class="old">${RX.fmtDZ(p.oldPrice)} دج</span>` : "");
-  const oFeats = normFeatures(p);
-  document.getElementById("mSpecs").innerHTML = `
-    ${p.topSpeed ? `<div class="mf-spec"><span class="k">السرعة</span><span class="v">${p.topSpeed} km/h</span></div>` : ""}
-    ${p.rangeKm ? `<div class="mf-spec"><span class="k">المدى</span><span class="v">${p.rangeKm} km</span></div>` : ""}
-    ${p.battery ? `<div class="mf-spec"><span class="k">البطارية</span><span class="v">${RXesc(p.battery)}</span></div>` : ""}
-    ${oFeats.map(f => `<div class="mf-spec full"><span class="k">${RXesc(f.label)}</span><span class="v">${RXesc(f.value)}</span></div>`).join("")}
-  `;
-  // Colors — أزرار ألوان مع صور، والضغط يبدّل صورة المنتج
-  const pColors = normColors(p);
-  const mImgEl = document.getElementById("mImg");
-  const orderMainSrc = RX.getProductMainImage(p);
-  const mSw = document.getElementById("mColorSwatches");
-  const oSw = document.getElementById("oColorSwatches");
-  const mLab = document.getElementById("mColorLabel");
-  const oLab = document.getElementById("oColorLabel");
-  const oVal = document.getElementById("oColorValue");
-  let selColor = (opts.selectedColor && pColors.some(c => c.name === opts.selectedColor))
-    ? opts.selectedColor
-    : (pColors[0] ? pColors[0].name : "");
-  if (pColors.length) {
-    const swHtml = pColors.map(c =>
-      `<button type="button" class="o-color ${c.name === selColor ? "active" : ""}" data-color="${RXesc(c.name)}" data-img="${c.image || ""}">${c.image ? `<img src="${c.image}" alt="${RXesc(c.name)}">` : ""}<span>${RXesc(c.name)}</span></button>`
-    ).join("");
-    if (mSw) { mSw.innerHTML = swHtml; mSw.style.display = ""; if (mLab) mLab.style.display = ""; }
-    if (oSw) { oSw.innerHTML = swHtml; oSw.style.display = ""; if (oLab) oLab.style.display = ""; }
+function updatePodColor() {
+  const line = document.getElementById("podColorLine");
+  const val = document.getElementById("podColor");
+  if (!line || !val) return;
+  if (_pdSelectedColor) {
+    val.textContent = _pdSelectedColor;
+    line.style.display = "flex";
   } else {
-    [mSw, oSw].forEach(el => { if (el) { el.innerHTML = ""; el.style.display = "none"; } });
-    [mLab, oLab].forEach(el => { if (el) el.style.display = "none"; });
+    line.style.display = "none";
   }
-  if (oVal) oVal.value = selColor;
-  const applyOrderColor = (name, img) => {
-    selColor = name;
-    if (oVal) oVal.value = name;
-    [mSw, oSw].forEach(el => {
-      if (!el) return;
-      el.querySelectorAll(".o-color").forEach(b => b.classList.toggle("active", b.dataset.color === name));
-    });
-    mImgEl.src = img || orderMainSrc;
-  };
-  [mSw, oSw].forEach(el => {
-    if (!el) return;
-    el.querySelectorAll(".o-color").forEach(b => b.addEventListener("click", () => applyOrderColor(b.dataset.color, b.dataset.img)));
-  });
-  if (selColor) {
-    const sc = pColors.find(c => c.name === selColor);
-    if (sc && sc.image) mImgEl.src = sc.image;
-  }
-  // Qty
-  document.getElementById("oQty").value = opts.quantity || 1;
-  // Reset form
-  ["oName", "oLastName", "oPhone", "oCity", "oNotes"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-  // مباشرة إلى استمارة الطلب (بدون خطوة وسطى)
-  document.getElementById("formStep").style.display = "flex";
-  document.getElementById("successStep").classList.remove("on");
-  modal.classList.add("open");
-  document.body.style.overflow = "hidden";
 }
 
-window.openOrder = openOrder;
+function setupOrderPanel() {
+  const wSel = document.getElementById("oWilaya");
+  const cSel = document.getElementById("oCommune");
+  if (!wSel || !cSel) return;
 
-document.addEventListener("click", e => {
-  if (e.target.id === "modalClose") closeAllModals();
-  const modal = document.getElementById("orderModal");
-  if (e.target === modal) closeAllModals();
-});
-document.addEventListener("DOMContentLoaded", () => {
-  const submit = document.getElementById("submitOrderBtn");
-  if (submit) submit.addEventListener("click", submitOrder);
-  // أزرار الكمية داخل نافذة الطلب
-  const oQty = document.getElementById("oQty");
-  const modalBox = document.getElementById("orderModal");
-  if (oQty && modalBox) {
-    const minus = modalBox.querySelector("#qtyMinus");
-    const plus = modalBox.querySelector("#qtyPlus");
-    if (minus) minus.addEventListener("click", () => { oQty.value = Math.max(1, +oQty.value - 1); });
-    if (plus) plus.addEventListener("click", () => { oQty.value = Math.min(20, +oQty.value + 1); });
+  // قائمة الولايات: الرقم أولاً ثم الاسم بالعربية والفرنسية
+  // (69 ولاية رسمياً حسب القانون 26-06 / الجريدة الرسمية أفريل 2026)
+  if (window.DZ_WILAYAS && Array.isArray(window.DZ_WILAYAS) && window.DZ_WILAYAS.length) {
+    wSel.innerHTML = '<option value="">اختر الولاية بالرقم</option>' +
+      window.DZ_WILAYAS.map(w => `<option value="${w[0]}">${w[0]} — ${w[1]} (${w[2]})</option>`).join("");
+  } else {
+    // احتياط: لو فشل تحميل ملف الولايات لأي سبب
+    wSel.innerHTML = '<option value="">اختر الولاية</option><option value="غير محدد">ولاية غير مذكورة</option>';
   }
-});
-async function submitOrder() {
-  if (!_orderCtx) return;
-  const name = document.getElementById("oName").value.trim();
-  const lastName = ((document.getElementById("oLastName") || {}).value || "").trim();
-  const fullName = [name, lastName].filter(Boolean).join(" ");
-  const phone = document.getElementById("oPhone").value.trim();
-  const city = document.getElementById("oCity").value.trim();
-  const notes = document.getElementById("oNotes").value.trim();
-  const qty = +document.getElementById("oQty").value || 1;
-  const colorEl = document.getElementById("oColorValue");
-  const color = (colorEl && colorEl.value) || "";
-  const hp = (document.querySelector("#formStep input[name=website]") || {}).value || "";
-  if (name.length < 2) return RX.toast("اكتب اسمك الكامل", "err");
+
+  wSel.addEventListener("change", fillPodCommunes);
+  const btn = document.getElementById("pdOrderBtn");
+  if (btn) btn.addEventListener("click", submitPodOrder);
+  updatePodColor();
+}
+
+function fillPodCommunes() {
+  const wSel = document.getElementById("oWilaya");
+  const cSel = document.getElementById("oCommune");
+  const w = (window.DZ_WILAYAS || []).find(x => x[0] === wSel.value);
+  if (!w) {
+    cSel.innerHTML = '<option value="">اختر الولاية أولاً</option>';
+    cSel.disabled = true;
+    return;
+  }
+  cSel.disabled = false;
+  cSel.innerHTML = '<option value="">اختر البلدية</option>' +
+    w[3].map(c => `<option value="${RXesc(c[1])}">${RXesc(c[0])} — ${RXesc(c[1])}</option>`).join("");
+}
+
+async function submitPodOrder() {
+  const p = _currentProduct;
+  if (!p) return;
+  const name = ((document.getElementById("oName") || {}).value || "").trim();
+  const phone = ((document.getElementById("oPhone") || {}).value || "").trim();
+  const wSel = document.getElementById("oWilaya");
+  const wCode = wSel ? wSel.value : "";
+  const wInfo = (window.DZ_WILAYAS || []).find(x => x[0] === wCode);
+  const cSel = document.getElementById("oCommune");
+  const cFr = cSel ? cSel.value : "";
+  const cInfo = wInfo ? wInfo[3].find(c => c[1] === cFr) : null;
+  const notes = ((document.getElementById("oNotes") || {}).value || "").trim();
+  const hp = ((document.querySelector("#pdOrderForm input[name=website]") || {}).value) || "";
+
+  if (name.length < 3) return RX.toast("اكتب اسمك الكامل (الاسم واللقب)", "err");
   if (!/^[0-9+][0-9\s\-]{7,}$/.test(phone)) return RX.toast("رقم الهاتف غير صحيح", "err");
-  const btn = document.getElementById("submitOrderBtn");
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> جارٍ الإرسال...';
+  if (!wCode || !wInfo) return RX.toast("اختر الولاية", "err");
+  if (!cFr || !cInfo) return RX.toast("اختر البلدية", "err");
+
+  const btn = document.getElementById("pdOrderBtn");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> جارٍ الإرسال...'; }
   try {
     await RX.submitOrder({
-      productId: _orderCtx.product.id,
-      customerName: fullName,
+      productId: p.id,
+      customerName: name,
       phone,
-      city,
-      quantity: qty,
-      selectedColor: color,
+      wilayaCode: wCode,
+      wilayaName: wInfo[1],
+      communeName: cInfo[0],
+      communeFr: cInfo[1],
+      city: [wCode, wInfo[1], cInfo[1]].filter(Boolean).join(" - "),
+      selectedColor: _pdSelectedColor || "",
       notes,
+      quantity: 1, // الكمية ثابتة — محل دراجات وسكوترات
       website: hp
     });
-    document.getElementById("formStep").style.display = "none";
-    document.getElementById("successStep").classList.add("on");
+    // إخفاء الحقول وإظهار رسالة النجاح مكانها (فوق زر الطلب)
+    const fields = document.getElementById("podFields");
+    const ok = document.getElementById("podSuccess");
+    if (fields) fields.style.display = "none";
+    if (ok) ok.style.display = "block";
+    if (btn) { btn.disabled = true; btn.textContent = "تم إرسال الطلب ✓"; }
     RX.toast("تم إرسال طلبك بنجاح", "ok");
   } catch (err) {
     RX.toast(err.message || "تعذّر إرسال الطلب، حاول لاحقاً", "err");
-  } finally {
-    btn.disabled = false; btn.textContent = "تأكيد الطلب";
+    if (btn) { btn.disabled = false; btn.textContent = "اطلب الآن"; }
   }
 }

@@ -4,8 +4,8 @@
 
 - ✅ **Frontend:** HTML / CSS / JavaScript (بدون إطار عمل — سريع جداً)
 - ✅ **Backend:** Firebase (Firestore + Auth + Storage)
-- ✅ **Functions:** Netlify Functions (للتحقق الإضافي للطلبات والتقييمات)
-- ✅ **النشر:** Netlify
+- ✅ **Functions:** Vercel Functions في مجلد `api/` (للتحقق الإضافي للطلبات والتقييمات، مع خدمة Netlify السابقة كمسار احتياطي)
+- ✅ **النشر:** Vercel (rexmoto.vercel.app) — مع بقاء إعدادات Netlify القديمة سارية كاحتياط
 - ✅ **اللغة:** عربي (RTL) + تصميم داكن Premium
 - ✅ **متجاوب:** 320px حتى Desktop
 - ✅ **PWA** قابل للتثبيت على الهاتف
@@ -23,7 +23,8 @@ rexmoto/
 ├── manifest.webmanifest          إعدادات PWA
 ├── robots.txt
 ├── sitemap.xml
-├── netlify.toml                  قواعد الأمان والـ Headers
+├── vercel.json                  قواعد الأمان والـ Headers (المنصة الجديدة)
+├── netlify.toml                  (احتياط — إعدادات المنصة القديمة)
 ├── package.json
 ├── admin/
 │   ├── index.html                لوحة الإدارة
@@ -39,7 +40,8 @@ rexmoto/
 │       ├── firebase.js           تهيئة Firebase
 │       ├── app.js                منطق المتجر
 │       └── admin.js              منطق لوحة الإدارة
-├── netlify/functions/
+├── netlify/functions/        (احتياط — الدوال القديمة)
+├── api/                        دوال Vercel (الطلبات والتقييمات)
 │   ├── submit-order.js           Function حفظ الطلب
 │   └── submit-testimonial.js     Function حفظ التقييم
 ├── firebase/
@@ -96,13 +98,13 @@ window.REXMOTO_CONFIG = {
     messagingSenderId: "1234567890",
     appId: "1:1234567890:web:abc123..."
   },
-  apiBase: "/.netlify/functions",
+  apiBase: "/api",
   storeName: "REXMOTO",
   whatsappDefault: "213550000000"
 };
 ```
 
-> 🔓 **ملاحظة أمان:** قيمة `apiKey` في تطبيقات الويب ليست سرّية — الأمان الحقيقي يأتي من قواعد Firestore وStorage. المفتاح السري (Service Account) يُخزَّن فقط في Netlify.
+> 🔓 **ملاحظة أمان:** قيمة `apiKey` في تطبيقات الويب ليست سرّية — الأمان الحقيقي يأتي من قواعد Firestore وStorage. المفتاح السري (Service Account) يُخزَّن فقط في بيئة Vercel.
 
 ### 6) إنشاء حساب المدير
 
@@ -141,25 +143,28 @@ firebase deploy --only firestore:indexes
 
 ---
 
-## 🌐 النشر على Netlify
+## 🌐 النشر على Vercel (الجديد)
 
 ### 1) ارفع المشروع على GitHub
 
-- ادفع كل الملفات إلى repo جديد.
+- ادفع كل الملفات إلى repo (حقن أو رفع الملفات من المتصفح).
 
-### 2) اربط Netlify
+### 2) اربط Vercel
 
-1. سجّل دخول على [netlify.com](https://netlify.com/).
-2. **Add new site → Import an existing project → GitHub**.
-3. اختر الـ repo.
-4. Build settings:
-   - **Build command:** اتركها فارغة
-   - **Publish directory:** `.` (نقطة)
-5. اضغط **Deploy**.
+1. سجّل دخول على [vercel.com](https://vercel.com/) بحساب GitHub.
+2. **Add New → Project** ثم اختر الـ repo.
+3. Vercel سيكتشف تلقائياً:
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `.`
+   - **Framework:** Other
+4. اضغط **Deploy** — النشر التلقائي من كل Commit.
+
+> ⚠️ **مهم:** الدوال تحتاج مكتبة `firebase-admin` — تأكد أن
+> `package.json` يتضمنها (موجودة أصلاً) وستُثبَّت تلقائياً أثناء البناء.
 
 ### 3) أضف متغيرات البيئة (Environment Variables)
 
-في Netlify: **Site settings → Environment variables** أضف:
+في Vercel: **Project → Settings → Environment Variables** أضف:
 
 | المفتاح | القيمة |
 |---|---|
@@ -171,35 +176,44 @@ firebase deploy --only firestore:indexes
 3. حمّل الملف JSON.
 4. افتحه وانسخ محتواه بالكامل.
 5. الصقه كقيمة للمتغير `FIREBASE_SERVICE_ACCOUNT`.
+   (أضفه للبيئات Production + Preview ثم أعد النشر).
 
 > 🔒 **لا تشارك هذا الملف ولا ترفعه إلى GitHub أبداً**.
 
-### 4) إعادة النشر
+### 4) اللوحة والدوال
 
-بعد إضافة المتغيرات: **Deploys → Trigger deploy → Deploy site**.
+- لوحة الإدارة: `rexmoto.vercel.app/admin/`
+- الدوال: `rexmoto.vercel.app/api/submit-order` و `.../api/submit-testimonial`
+- الموقع القديم `rexmoto.netlify.app` يبقى يعمل (دوال Netlify القديمة
+  موجودة) — الانتقال آمن، ويمكن حذف موقع Netlify لاحقاً إن أردت.
+
+### 5) ملاحظة: الدومين القديم
+
+قبل الانتقال النهائي، أي روابط قديمة أو صور متقاطعة من `rexmoto.netlify.app`
+ستُحدَّث تدريجياً. إذا أردت ربط `rexmoto.vercel.app` بدومين خاص لاحقاً:
+**Settings → Domains**.
 
 ---
-
 ## 🧪 اختبار الموقع محلياً
 
 ```bash
-# ثبّت Netlify CLI
-npm install -g netlify-cli
+# ثبّت Vercel CLI
+npm install -g vercel
 
 # ثبّت الحزم
 npm install
 
-# شغّل بيئة التطوير
-netlify dev
+# شغّل بيئة التطوير (الدوال تعمل محلياً)
+vercel dev
 ```
 
-سيفتح الموقع على `http://localhost:8888` مع عمل الـ Functions محلياً.
+سيفتح الموقع محلياً مع عمل دوال Vercel محلياً (تذكر ضبط FIREBASE_SERVICE_ACCOUNT أو ستعمل الدوال بالتحقق فقط).
 
 ---
 
 ## 📲 ما يراه المدير في لوحة الإدارة
 
-ادخل على `your-site.netlify.app/admin/`:
+ادخل على `rexmoto.vercel.app/admin/`:
 
 1. **الرئيسية**: إحصائيات الطلبات، قيمة المبيعات، تنبيهات المخزون، مخطط 7 أيام، أحدث الطلبات.
 2. **الطلبات**: كل الطلبات مع البحث والفلترة، تغيير الحالة (جديد ← تم التواصل ← مؤكد ← تم التسليم / ملغى)، زر واتساب مباشر للعميل، تفاصيل كاملة.
@@ -227,7 +241,7 @@ netlify dev
 - ✅ قواعد Firestore تمنع الزائر من قراءة الطلبات أو تعديلها.
 - ✅ الزائر يستطيع فقط **إنشاء** طلب/تقييم — لا قراءة طلبات الآخرين.
 - ✅ المدير فقط يستطيع القراءة/التعديل (مصادَق عليه).
-- ✅ Service Account في Netlify Function للتحقق الإضافي (السعر يُجلب من DB، لا من العميل).
+- ✅ Service Account في Vercel Function للتحقق الإضافي (السعر يُجلب من DB، لا من العميل).
 - ✅ Honeypot لمكافحة السبام.
 - ✅ التحقق من المدخلات (طول، نمط، حدود).
 - ✅ Security Headers كاملة (CSP, HSTS, X-Frame-Options...).

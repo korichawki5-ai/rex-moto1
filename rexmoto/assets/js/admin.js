@@ -70,31 +70,62 @@ let currentUser = null;
 // ═════════════════════════════════════════════════════════════
 const MAX_IMG_W = 1200;
 const IMG_QUALITY = 0.82;
+const MAX_UPLOAD_MB = 25; // حد الملف قبل الضغط (الهواتف الحديثة تلتقط صوراً كبيرة)
+
+// ترميز صورة إلى dataURL JPEG بأبعاد وجودة محددتين
+function encodeToDataUrl(img, maxW, quality) {
+  let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+  if (!w || !h) throw new Error("أبعاد الصورة غير معروفة");
+  if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", quality);
+}
 
 function compressImage(file, opts = {}) {
   const maxW = opts.maxW || MAX_IMG_W;
   const quality = (typeof opts.quality === "number") ? opts.quality : IMG_QUALITY;
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) return reject(new Error("not an image"));
-    if (file.size > 10 * 1024 * 1024) return reject(new Error("حجم الصورة كبير جداً (أقصى 10MB)"));
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) return reject(new Error(`حجم الصورة كبير جداً (أقصى ${MAX_UPLOAD_MB} ميغابايت)`));
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        resolve(dataUrl);
+        try {
+          // ضغط تكيفي: إن كانت النتيجة كبيرة نعيد الترميز بجودة/أبعاد أصغر
+          let cur = encodeToDataUrl(img, maxW, quality);
+          let tries = 0;
+          while (cur.length > 520 * 1024 && tries < 4) {
+            tries++;
+            const q = Math.max(0.55, quality - tries * 0.08);
+            const w = Math.max(720, Math.round(maxW * (1 - tries * 0.09)));
+            cur = encodeToDataUrl(img, w, q);
+          }
+          resolve(cur);
+        } catch (err) { reject(err); }
       };
-      img.onerror = () => reject(new Error("fichier image invalide"));
+      img.onerror = () => reject(new Error("ملف الصورة غير صالح"));
       img.src = e.target.result;
     };
-    reader.onerror = () => reject(new Error("erreur lecture"));
+    reader.onerror = () => reject(new Error("تعذّرت قراءة الملف"));
     reader.readAsDataURL(file);
+  });
+}
+
+// إعادة ضغط dataURL موجودة (تُستعمل تلقائياً قبل الحفظ إن اقتربنا من حد الوثيقة)
+function shrinkDataUrl(dataUrl, maxW, quality) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try { resolve(encodeToDataUrl(img, maxW, quality)); }
+        catch (e) { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch (e) { resolve(dataUrl); }
   });
 }
 
@@ -219,14 +250,25 @@ function renderDash() {
   }).join("");
 }
 
+// موقع الطلب: ولاية + بلدية (مع رجوع لحقل city القديم)
+function orderLoc(o) {
+  const parts = [];
+  if (o.wilayaCode) parts.push(o.wilayaCode);
+  if (o.wilayaName) parts.push(o.wilayaName);
+  if (o.communeNameFr) parts.push(o.communeNameFr);
+  if (!parts.length && o.city) parts.push(o.city);
+  return parts.join(" - ") || "—";
+}
+
 function renderOrderTable(list) {
   if (!list.length) return `<div class="empty-state"><h4>لا توجد طلبات</h4><p>ستظهر الطلبات هنا فور وصولها.</p></div>`;
   const rows = list.map(o => {
     const p = products.find(x => x.id === o.productId);
     const img = o.productImage || (p ? productMainImage(p) : "");
+    const qtyTxt = (o.quantity && o.quantity > 1) ? " · " + o.quantity + "×" : "";
     return `<tr>
       <td class="od-cust"><b>${o.customerName}</b><small>${o.phone}</small></td>
-      <td><div class="od-prod">${img ? `<img src="${img}" alt="">` : ""}<div><b>${o.productName || "—"}</b><small>${o.city || "—"} · ${o.quantity || 1}× ${o.selectedColor ? "· " + o.selectedColor : ""}</small></div></div></td>
+      <td><div class="od-prod">${img ? `<img src="${img}" alt="">` : ""}<div><b>${o.productName || "—"}</b><small>${orderLoc(o)}${qtyTxt}${o.selectedColor ? " · " + o.selectedColor : ""}</small></div></div></td>
       <td><span class="st-mini">${fmtDZD(o.totalPrice || 0)}</span></td>
       <td>${statusPill(o.status)}</td>
       <td><div class="row-actions">
@@ -261,7 +303,9 @@ window.showOrder = function (id) {
     <div class="detail-row"><b>رقم الطلب</b><span style="font-family:var(--mono)">${o.id.slice(0,12)}</span></div>
     <div class="detail-row"><b>العميل</b><span>${o.customerName}</span></div>
     <div class="detail-row"><b>الهاتف</b><span dir="ltr">${o.phone}</span></div>
-    <div class="detail-row"><b>المدينة</b><span>${o.city || "—"}</span></div>
+    <div class="detail-row"><b>الولاية</b><span>${o.wilayaCode ? o.wilayaCode + " - " : ""}${o.wilayaName || (o.city ? "غير محددة" : "—")}</span></div>
+    <div class="detail-row"><b>البلدية</b><span>${o.communeName || "—"}${o.communeName && o.communeNameFr ? " (" + o.communeNameFr + ")" : ""}</span></div>
+    ${!o.wilayaName && o.city ? `<div class="detail-row"><b>المدينة</b><span>${o.city}</span></div>` : ""}
     <div class="detail-row"><b>المنتج</b><span>${o.productName || "—"}</span></div>
     <div class="detail-row"><b>الكمية</b><span>${o.quantity || 1}</span></div>
     <div class="detail-row"><b>اللون</b><span>${o.selectedColor || "—"}</span></div>
@@ -587,6 +631,31 @@ document.getElementById("productForm").addEventListener("submit", async e => {
       .filter(r => r.name)
       .slice(0, 6);
 
+    // ═══ حماية حد الوثيقة (حوالي 1MB في Firestore) ═══
+    // نقيس حجم الصور (المنتج + الألوان + المصغرة) — إن اقتربنا من السقف
+    // نضغط كل شيء تلقائياً بجودة أدنى، وإن تجاوزنا السقف نمنع الحفظ برسالة واضحة.
+    const estDocSize = () =>
+      finalImages.reduce((a, i) => a + ((i.url && i.url.length) || 0), 0) +
+      colorsData.reduce((a, c) => a + ((c.image && c.image.length) || 0), 0) +
+      ((thumbImage && thumbImage.length) || 0);
+    let est = estDocSize();
+    if (est > 820 * 1024) {
+      toast("الصور كبيرة — جاري ضغطها تلقائياً لتوفير المساحة...", "info");
+      for (let i = 0; i < finalImages.length; i++) {
+        if (finalImages[i].url && finalImages[i].url.startsWith("data:")) {
+          finalImages[i].url = await shrinkDataUrl(finalImages[i].url, 1000, 0.6);
+        }
+      }
+      for (const c of colorsData) {
+        if (c.image) c.image = await shrinkDataUrl(c.image, 700, 0.6);
+      }
+      if (thumbImage) thumbImage = await shrinkDataUrl(thumbImage, 520, 0.6);
+      est = estDocSize();
+    }
+    if (est > 950 * 1024) {
+      throw new Error("حجم الصور كبير على قاعدة البيانات — قلّل عدد الصور أو اختر صوراً أصغر (أقصى 8 صور للمنتج)");
+    }
+
     const data = {
       name: document.getElementById("pmName").value.trim(),
       brand: document.getElementById("pmBrand").value.trim() || null,
@@ -696,15 +765,103 @@ window.deleteTest = async (id) => {
 // ═════════════════════════════════════════════════════════════
 // SETTINGS
 // ═════════════════════════════════════════════════════════════
+
+// ═══ صور الواجهة (هيرو + فئات) — تظهر في الصفحة الرئيسية بدل الصور الافتراضية ═══
+const CAT_META = [
+  ["moto", "موتور سايكل كهربائي"],
+  ["scooter", "طروتينات وسكوترات"],
+  ["battery", "بطاريات وشواحن"],
+  ["accessory", "إكسسوارات وخوذ"],
+  ["part", "قطع غيار وصيانة"]
+];
+let siteImgs = {
+  hero: "",
+  cats: { moto: "", scooter: "", battery: "", accessory: "", part: "" }
+};
+
+function renderSettingsImgs() {
+  // الهيرو
+  const heroBox = document.getElementById("siBoxHero");
+  if (heroBox) {
+    let img = heroBox.querySelector("img");
+    const empty = heroBox.querySelector(".si-empty");
+    if (siteImgs.hero) {
+      if (!img) { img = document.createElement("img"); heroBox.insertBefore(img, heroBox.firstChild); }
+      img.src = siteImgs.hero; img.style.display = "";
+      if (empty) { empty.style.display = "none"; }
+    } else {
+      if (img) img.style.display = "none";
+      if (empty) { empty.style.display = "grid"; empty.textContent = "الصورة الافتراضية"; }
+    }
+  }
+  // الفئات الخمس
+  const wrap = document.getElementById("siCats");
+  if (!wrap) return;
+  wrap.innerHTML = CAT_META.map(([key, label]) => `
+    <div class="s-field">
+      <label>${label}</label>
+      <div class="si-box" id="siBox_${key}">
+        <span class="si-empty">الصورة الافتراضية</span>
+        <div class="si-actions">
+          <button type="button" class="cr-btn" onclick="document.getElementById('siFile_${key}').click()">📷 اختيار صورة</button>
+          <button type="button" class="cr-btn danger" onclick="clearSiteImage('${key}',true)">استرجاع الافتراضية</button>
+        </div>
+        <input type="file" id="siFile_${key}" accept="image/*" hidden onchange="onSiteImage('${key}',this,true)">
+      </div>
+    </div>`).join("");
+  CAT_META.forEach(([key]) => {
+    const box = document.getElementById("siBox_" + key);
+    const url = siteImgs.cats[key] || "";
+    let img = box.querySelector("img");
+    if (url) {
+      if (!img) { img = document.createElement("img"); box.insertBefore(img, box.firstChild); }
+      img.src = url; img.style.display = "";
+      box.querySelector(".si-empty").style.display = "none";
+    } else {
+      if (img) img.style.display = "none";
+      box.querySelector(".si-empty").style.display = "grid";
+    }
+  });
+}
+
+window.onSiteImage = async function (key, input, isCat) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    toast("جارٍ ضغط الصورة...", "info");
+    const dataUrl = await compressImage(file, isCat ? { maxW: 800, quality: 0.78 } : { maxW: 1400, quality: 0.78 });
+    if (isCat) siteImgs.cats[key] = dataUrl; else siteImgs.hero = dataUrl;
+    renderSettingsImgs();
+    toast("تم تجهيز الصورة — اضغط «حفظ الإعدادات» لتطبيقها");
+  } catch (e) { toast(e.message || "تعذّرت إضافة الصورة", "err"); }
+  input.value = "";
+};
+window.clearSiteImage = function (key, isCat) {
+  if (isCat) siteImgs.cats[key] = ""; else siteImgs.hero = "";
+  renderSettingsImgs();
+  toast("سيعود الموقع للصورة الافتراضية عند الحفظ");
+};
+
 async function loadSettings() {
   const snap = await getDoc(doc(db, "settings", "public"));
-  if (!snap.exists()) return;
+  if (!snap.exists()) { renderSettingsImgs(); return; }
   const s = snap.data();
   const form = document.getElementById("settingsForm");
   Object.keys(s).forEach(k => {
     const el = form.elements[k];
     if (el) el.value = s[k];
   });
+  // صور الواجهة
+  siteImgs.hero = typeof s.heroImage === "string" ? s.heroImage : "";
+  const ci = (s.catImages && typeof s.catImages === "object") ? s.catImages : {};
+  siteImgs.cats = {
+    moto: typeof ci.moto === "string" ? ci.moto : "",
+    scooter: typeof ci.scooter === "string" ? ci.scooter : "",
+    battery: typeof ci.battery === "string" ? ci.battery : "",
+    accessory: typeof ci.accessory === "string" ? ci.accessory : "",
+    part: typeof ci.part === "string" ? ci.part : ""
+  };
+  renderSettingsImgs();
 }
 
 document.getElementById("settingsForm").addEventListener("submit", async e => {
@@ -712,15 +869,23 @@ document.getElementById("settingsForm").addEventListener("submit", async e => {
   const btn = document.getElementById("saveSettingsBtn");
   btn.disabled = true; btn.textContent = "جارٍ الحفظ...";
   try {
+    // صور الواجهة (هيرو + فئات): حماية حدود الوثيقة (~1MB) قبل الحفظ
+    const imgsSize = siteImgs.hero.length + Object.values(siteImgs.cats).reduce((a, v) => a + v.length, 0);
+    if (imgsSize > 850 * 1024) {
+      toast("صور الواجهة كبيرة جداً على قاعدة البيانات — اختر صوراً أصغر لتوفير المساحة", "err");
+      return;
+    }
     const data = {};
     const form = e.target;
     ["storeName","email","phone","whatsapp","address","mapUrl","hours","facebook","instagram","pageTitle","metaDescription","accentColor"].forEach(k => {
       const el = form.elements[k];
       if (el) data[k] = el.value.trim();
     });
+    data.heroImage = siteImgs.hero; // "" = استرجاع الصورة الافتراضية
+    data.catImages = siteImgs.cats;
     data.updatedAt = serverTimestamp();
     await setDoc(doc(db, "settings", "public"), data, { merge: true });
-    toast("تم حفظ الإعدادات");
+    toast("تم حفظ الإعدادات — حدّث صفحة المتجر لترى الصور الجديدة");
   } catch (err) { toast("خطأ: " + err.message, "err"); }
   finally { btn.disabled = false; btn.textContent = "💾 حفظ الإعدادات"; }
 });

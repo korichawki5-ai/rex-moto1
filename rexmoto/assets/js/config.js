@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    REXMOTO — Client-side Firebase Configuration
    ⚠️  هذه القيم آمنة للظهور في الكود (Firebase Web API Key ليست سرّية).
-   المفاتيح السرية للإدارة تُخزَّن في Netlify Environment Variables فقط.
+   المفاتيح السرية للإدارة تُخزَّن في Variables بيئة المنصة (Vercel) فقط.
    ═══════════════════════════════════════════════════════════════ */
 
 window.REXMOTO_CONFIG = {
@@ -13,8 +13,8 @@ window.REXMOTO_CONFIG = {
     messagingSenderId: "577104953553",
     appId: "1:577104953553:web:fc9638b90ed8b6b43205f0"
   },
-  // Netlify Function endpoint
-  apiBase: "/.netlify/functions",
+  // عنوان الدوال (Vercel Functions) — الخادم يتحقق من السعر والمخزون
+  apiBase: "/api",
   storeName: "REXMOTO",
   whatsappDefault: "213550000000"
 };

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "REXMOTO — متجر الدراجات والسكوترات الكهربائية",
   "scripts": {
-    "dev": "netlify dev",
+    "dev": "vercel dev",
     "build": "node scripts/hash-assets.js"
   },
   "dependencies": {

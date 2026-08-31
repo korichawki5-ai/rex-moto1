@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Netlify Build — Content-Hashed Assets
+   Content-Hashed Assets (build)
    يولّد نسخاً من ملفات CSS/JS بأسماء فريدة مشتقة من محتواها
    (app.a1b2c3d4.js) ثم يعيد كتابة روابطها في كل صفحات HTML.
    النتيجة: كل نشر = روابط جديدة = كل جهاز (حتى التي لا يمكن
@@ -17,6 +17,7 @@ const assets = [
   "assets/js/config.js",
   "assets/js/firebase.js",
   "assets/js/app.js",
+  "assets/js/wilayas.js",
   "assets/js/admin.js",
 ];
 
