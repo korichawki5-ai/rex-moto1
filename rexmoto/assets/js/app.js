@@ -188,7 +188,7 @@ function productCard(p) {
     <div class="imgbox">
       ${badge}
       <span class="badge br">${p.brand || ""}</span>
-      <img src="${mainImg}" alt="${p.name}" loading="lazy">
+      <img src="${mainImg}" alt="${p.name}" loading="lazy" decoding="async">
     </div>
     <div class="body">
       <div><span class="pbrand">${p.brand || ""}</span><h3>${p.name}</h3></div>
@@ -224,7 +224,7 @@ function renderProductGrid(container, products) {
 function categoryCard(num, title, img, target, spanClass) {
   const href = `products.html?cat=${encodeURIComponent(target)}`;
   return `<a class="cat ${spanClass}" href="${href}">
-    <img class="cat-img" src="${img}" alt="${title}" loading="lazy">
+    <img class="cat-img" src="${img}" alt="${title}" loading="lazy" decoding="async">
     <div class="shade"></div>
     <div class="inner"><span class="count">${num}</span><h3>${title}</h3></div>
   </a>`;
@@ -446,7 +446,7 @@ function renderProductDetail(p) {
   const thumbsEl = document.getElementById("pdThumbs");
   if (imgs.length) {
     mainEl.src = imgs[0];
-    thumbsEl.innerHTML = imgs.map((src, i) => `<img src="${src}" class="${i === 0 ? "active" : ""}" onclick="window.switchPdImg(this, '${src}')" alt="صورة ${i + 1}">`).join("");
+    thumbsEl.innerHTML = imgs.map((src, i) => `<img loading="lazy" decoding="async" src="${src}" class="${i === 0 ? "active" : ""}" onclick="window.switchPdImg(this, '${src}')" alt="صورة ${i + 1}">`).join("");
   } else {
     mainEl.src = "public/images/placeholder.svg";
     thumbsEl.innerHTML = "";
@@ -459,7 +459,7 @@ function renderProductDetail(p) {
   if (pColors.length) {
     colorWrap.style.display = "";
     colorWrap.querySelector(".color-chips").innerHTML = pColors.map((c, i) =>
-      `<button type="button" class="color-chip ${i === 0 ? "active" : ""} ${c.image ? "has-img" : ""}" data-color="${RXesc(c.name)}" data-img="${c.image || ""}">${c.image ? `<img src="${c.image}" alt="${RXesc(c.name)}">` : ""}<span>${RXesc(c.name)}</span></button>`
+      `<button type="button" class="color-chip ${i === 0 ? "active" : ""} ${c.image ? "has-img" : ""}" data-color="${RXesc(c.name)}" data-img="${c.image || ""}">${c.image ? `<img src="${c.image}" alt="${RXesc(c.name)}" loading="lazy" decoding="async">` : ""}<span>${RXesc(c.name)}</span></button>`
     ).join("");
     colorWrap.querySelectorAll(".color-chip").forEach(b => b.addEventListener("click", () => {
       colorWrap.querySelectorAll(".color-chip").forEach(x => x.classList.remove("active"));

@@ -16,9 +16,6 @@ import {
   serverTimestamp,
   limit
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import {
-  getAuth
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 const cfg = window.REXMOTO_CONFIG;
 
@@ -26,11 +23,10 @@ if (!cfg || !cfg.firebase || !cfg.firebase.apiKey || cfg.firebase.apiKey === "YO
   console.warn("[REXMOTO] ⚠️ لم يتم ضبط إعدادات Firebase بعد. راجع README.md");
 }
 
-let app, db, auth;
+let app, db;
 try {
   app = initializeApp(cfg.firebase);
   db = getFirestore(app);
-  auth = getAuth(app);
 } catch (e) {
   console.error("[REXMOTO] فشل تهيئة Firebase:", e);
 }
@@ -223,7 +219,7 @@ async function submitTestimonial(data) {
 // EXPORTS
 // ═════════════════════════════════════════════════════════════
 window.RX = {
-  app, db, auth,
+  app, db,
   fmtDZD, fmtDZ, waLink, telLink, slugify,
   getProductMainImage, getProductImages, getProductThumb, isProductVisible, isProductAvailable,
   offerActive, discountPercent, stockLabel,
