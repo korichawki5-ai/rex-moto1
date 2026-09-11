@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") closeAllModals();
   });
   // Init page-specific logic
+  setupPixelContact();
   initPage();
 });
 
@@ -398,6 +399,37 @@ function applyFilters() {
 // ═════════════════════════════════════════════════════════════
 // PRODUCT DETAIL PAGE
 // ═════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════
+// META PIXEL EVENTS — ViewContent / InitiateCheckout / Purchase / Contact
+// تُرسل من الكود مباشرة (أدق من أداة ميتا، وتشمل قيمة الشراء)
+// ═════════════════════════════════════════════════════════════
+let _pxViewSent = false, _pxCheckoutSent = false, _pxPurchaseSent = false;
+function pxNum(v) {
+  if (typeof v === "number" && isFinite(v)) return v;
+  const n = parseFloat(String(v == null ? "" : v).replace(/[^0-9.]/g, ""));
+  return isFinite(n) ? n : 0;
+}
+function pxProductParams(p, qty) {
+  const val = pxNum(p.price) * (qty || 1);
+  const params = { content_ids: [String(p.id)], content_type: "product", content_name: String(p.name || "") };
+  if (val > 0) { params.value = Math.round(val * 100) / 100; params.currency = "DZD"; }
+  if (qty) params.num_items = qty;
+  return params;
+}
+function pxTrack(ev, params) {
+  try {
+    if (typeof window.fbq === "function") {
+      if (params) window.fbq("track", ev, params);
+      else window.fbq("track", ev);
+    }
+  } catch (e) { /* التتبع لا يجب أن يكسر الموقع أبداً */ }
+}
+function setupPixelContact() {
+  document.addEventListener("click", (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me"], a[href*="whatsapp"]') : null;
+    if (a) pxTrack("Contact");
+  });
+}
 let _currentProduct = null;
 let _pdSelectedColor = "";
 async function initProductDetailPage() {
@@ -411,9 +443,11 @@ async function initProductDetailPage() {
   }
   _currentProduct = p;
   renderProductDetail(p);
+  if (!_pxViewSent && p) { _pxViewSent = true; pxTrack("ViewContent", pxProductParams(p)); }
   setupOrderPanel(p);
   // إذا جاء الزائر من زر "اطلب الآن" (بطاقة/زر) — مرّر مباشرة إلى الاستمارة
   if (params.get("order") === "1") {
+    if (!_pxCheckoutSent) { _pxCheckoutSent = true; pxTrack("InitiateCheckout", pxProductParams(p)); }
     setTimeout(() => {
       const el = document.getElementById("pdOrderForm");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -582,6 +616,7 @@ async function submitPodOrder() {
     if (ok) ok.style.display = "block";
     if (btn) { btn.disabled = true; btn.textContent = "تم إرسال الطلب ✓"; }
     RX.toast("تم إرسال طلبك بنجاح", "ok");
+    if (!_pxPurchaseSent) { _pxPurchaseSent = true; pxTrack("Purchase", pxProductParams(p, 1)); }
   } catch (err) {
     RX.toast(err.message || "تعذّر إرسال الطلب، حاول لاحقاً", "err");
     if (btn) { btn.disabled = false; btn.textContent = "اطلب الآن"; }
